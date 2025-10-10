@@ -1,0 +1,30 @@
+version: '3.8'
+
+services:
+  website-optimizer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: website-optimizer
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    volumes:
+      # Mount current directory for development (optional)
+      - .:/app
+    working_dir: /app
+    # Keep container running for interactive use
+    tty: true
+    stdin_open: true
+    # Restart policy
+    restart: unless-stopped
+    # Health check
+    healthcheck:
+      test: ["CMD", "python", "-c", "import sys; sys.exit(0)"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  default:
+    name: website-optimizer-network

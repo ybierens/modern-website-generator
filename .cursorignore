@@ -1,0 +1,10 @@
+# Environment files with actual secrets
+.env
+
+# Generated sites with user content
+generated-sites/
+
+# Temporary files
+temp-assets/
+*.log
+*.tmp

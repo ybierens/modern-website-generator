@@ -1,0 +1,133 @@
+---
+description: "Project guidance and development practices for Docker-first application development"
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Docker-First Project Guidelines
+
+> **📋 About This Document:** This is the Cursor project rule that automatically gets added as context to every AI prompt in this workspace in Cursor (YOU). It provides essential guidance about the project's architecture, development practices, and constraints that must be followed when generating or modifying code.
+
+## 🚀 Single-Command Docker Setup
+
+This project is designed for **zero-configuration deployment**. Everything works out of the box with a single command.
+
+### 🎯 Core Architecture:
+- **All services run in Docker containers** - no local runtime dependencies needed
+- **All dependencies managed inside containers** - package installation happens in Docker
+- **No lock files in git** - Docker generates dependencies fresh every time
+- **Servers bind to `0.0.0.0`** - proper container networking
+- **Applications optimized for Docker** - polling enabled, hot reload configured appropriately
+
+### 🚀 First-Time Setup:
+
+**Clone and run - that's it:**
+```bash
+git clone <repo-url>
+cd <project-name>
+docker-compose up --build -d
+```
+
+No additional setup, no dependency management, no configuration needed.
+
+### 🔄 Development Workflow:
+
+```bash
+# First, ensure Docker daemon is running:
+docker info > /dev/null 2>&1 || { echo "Docker daemon not running. Please start Docker Desktop."; exit 1; }
+
+# When asked to "run the project":
+docker-compose up --build -d
+
+# Check readiness with health checks:
+curl -s http://localhost:<port>/health
+
+# Automatically open browser:
+open http://localhost:<port>  # macOS
+# or xdg-open http://localhost:<port>  # Linux
+```
+
+**Why this workflow:**
+- ✅ **Docker daemon check first** - prevents cryptic errors if Docker daemon isn't running
+- ✅ **Terminal returns control** - can continue with next steps
+- ✅ **Programmatic health checks** - verify readiness
+- ✅ **Automatic browser opening** - seamless user experience
+- ✅ **Clean task completion** - clear start/finish workflow
+
+### 📦 Adding Dependencies:
+```bash
+# Add dependencies inside containers:
+docker-compose run --rm --no-deps <service-name> <package-manager> install <package>
+
+# Then rebuild and restart:
+docker-compose up --build -d
+```
+
+### 🎯 What's Gitignored (Docker-Managed):
+- `node_modules/` / `venv/` / similar - Generated inside containers
+- Package lock files - Generated fresh on each build
+- Build artifacts - Dynamically generated files
+- Temporary files - Runtime-generated content
+
+### 🎯 Design Philosophy:
+
+**"Clone and Run"** - No local setup, no dependency hell, no configuration. Just Docker.
+
+### 🔑 Environment Configuration Rules
+
+**CRITICAL:** Environment file handling follows strict security protocols:
+
+- **`env.template`** - Template file showing required environment variables (safe for git, Cursor accessible)
+- **`.env`** - Actual environment file with real secrets (gitignored, Cursor-ignored, user-managed)
+
+**🚨 ABSOLUTE RULES for AI Assistants:**
+1. **NEVER create or recreate the `.env` file** - it exists and is user-managed
+2. **TRUST that `.env` exists** - even though Cursor can't see it due to security blocking
+3. **ASSUME `.env` contains the same structure as `env.template`** but with actual values filled in
+4. **ONLY modify `env.template`** when environment variable changes are needed
+5. **ALWAYS refer users to copy `env.template` to `.env`** for initial setup
+
+**Why this setup:**
+- ✅ **Security:** Real secrets never visible to AI or git
+- ✅ **Functionality:** Docker and applications can access `.env` normally  
+- ✅ **Template:** `env.template` shows structure without exposing secrets
+- ✅ **Standard:** Follows industry-standard environment file practices
+
+## 🧪 Proof of Concept (TEMPORARY)
+
+> **⚠️ REMOVE THIS SECTION:** This entire section and all related files should be deleted when starting the real project implementation.
+
+### Current Proof of Concept: Website Scraper & Optimizer
+
+A simple proof of concept that scrapes websites and uses GPT-5 to generate modern HTML.
+
+**Files to remove when starting real project:**
+- `website_optimizer.py` - Main scraper script
+- `copy_html.sh` - Helper script for clean HTML output
+- `run.sh` - Docker runner script
+- `requirements.txt` - Python dependencies
+- This entire section in the guidelines
+
+**How to run the proof of concept:**
+```bash
+# Quick start:
+./copy_html.sh
+
+# Manual run:
+docker-compose up --build -d
+docker-compose exec website-optimizer python website_optimizer.py
+docker-compose exec website-optimizer cat optimized_website.html
+```
+
+**What it does:**
+1. Scrapes the hardcoded URL in `website_optimizer.py` (line 30)
+2. Processes content with GPT-5/GPT-4o
+3. Generates modern, responsive HTML with inline CSS/JS
+4. Outputs CodePen-ready code
+
+**Configuration:**
+- Edit `HARDCODED_URL` in `website_optimizer.py` to change target website
+- Requires OpenAI API key in `.env` file
+- Uses Docker for all dependencies
+
+**⚠️ CLEANUP REMINDER:** Delete all these files and this guidelines section before real development!
