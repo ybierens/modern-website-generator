@@ -242,6 +242,31 @@ async def get_job_status(job_id: UUID):
         raise HTTPException(status_code=500, detail=f"Failed to get job status: {str(e)}")
 
 
+@app.get("/websites")
+async def get_recent_websites():
+    """
+    Get the 10 most recent generated websites.
+    
+    Returns:
+        List of recent websites with basic information
+    """
+    try:
+        websites = await db.get_recent_websites(10)
+        return [
+            {
+                "id": str(website.id),
+                "identifier": website.identifier,
+                "original_url": website.original_url,
+                "created_at": website.created_at.isoformat(),
+                "has_generated_html": website.generated_html is not None
+            }
+            for website in websites
+        ]
+    except Exception as e:
+        print(f"❌ Failed to get recent websites: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to get recent websites: {str(e)}")
+
+
 @app.get("/raw/{identifier}", response_class=HTMLResponse)
 async def get_raw_website(identifier: str):
     """
@@ -528,9 +553,10 @@ async def serve_index():
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
             align-items: center;
-            justify-content: center;
-            padding: 20px;
+            justify-content: flex-start;
+            padding: 40px 20px;
         }
         
         .container {
@@ -538,7 +564,7 @@ async def serve_index():
             border-radius: 20px;
             box-shadow: 0 30px 60px rgba(0,0,0,0.2);
             padding: 40px;
-            max-width: 600px;
+            max-width: 900px;
             width: 100%;
             text-align: center;
         }
@@ -610,30 +636,43 @@ async def serve_index():
         
         .status {
             margin-top: 20px;
-            padding: 15px;
-            border-radius: 10px;
             display: none;
+            text-align: center;
+            color: #333;
+            font-size: 1rem;
         }
         
-        .status.processing {
-            background: #e3f2fd;
-            color: #1976d2;
-            border: 1px solid #bbdefb;
+        .status.show {
             display: block;
         }
         
-        .status.success {
-            background: #e8f5e8;
-            color: #2e7d32;
-            border: 1px solid #c8e6c9;
-            display: block;
+        .spinner {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid #f3f3f3;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+            vertical-align: middle;
         }
         
-        .status.error {
-            background: #ffebee;
-            color: #d32f2f;
-            border: 1px solid #ffcdd2;
-            display: block;
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .btn.loading {
+            background: transparent !important;
+            color: #333 !important;
+            box-shadow: none !important;
+            border: 2px solid #e1e5e9 !important;
+        }
+        
+        .btn.loading:hover {
+            transform: none !important;
+            box-shadow: none !important;
         }
         
         .result {
@@ -663,21 +702,6 @@ async def serve_index():
             background: #45a049;
         }
         
-        .spinner {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 2px solid #f3f3f3;
-            border-top: 2px solid #1976d2;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-right: 10px;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
         
         .preview-section {
             margin-top: 25px;
@@ -728,9 +752,12 @@ async def serve_index():
         }
         
         @media (max-width: 480px) {
+            body {
+                padding: 20px 10px;
+            }
+            
             .container {
                 padding: 30px 20px;
-                margin: 10px;
             }
             
             h1 {
@@ -741,6 +768,252 @@ async def serve_index():
                 width: 375px;
                 height: 667px;
                 transform: scale(1.2);
+            }
+        }
+        
+        /* Website List Styles */
+        .websites-container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 30px 60px rgba(0,0,0,0.2);
+            padding: 40px;
+            max-width: 900px;
+            width: 100%;
+            margin: 30px 0 0 0;
+            display: none;
+        }
+        
+        .websites-container.show {
+            display: block;
+        }
+        
+        .websites-container h2 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2rem;
+            font-weight: 700;
+            text-align: center;
+        }
+        
+        .websites-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .website-item {
+            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+        
+        .website-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+        }
+        
+        .website-header {
+            padding: 15px 20px;
+            background: #f8f9fa;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background-color 0.3s ease;
+        }
+        
+        .website-header-left {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex: 1;
+            cursor: pointer;
+        }
+        
+        .website-header-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .expand-arrow {
+            font-size: 1.2rem;
+            color: #667eea;
+            transition: transform 0.3s ease;
+            user-select: none;
+            cursor: pointer;
+        }
+        
+        /* Hide View Website button by default - use !important to ensure it works */
+        .website-btn-expanded-only {
+            display: none !important;
+        }
+        
+        /* Show View Website button only when expanded */
+        .website-item.expanded .website-btn-expanded-only {
+            display: inline-block !important;
+        }
+        
+        .website-header:hover {
+            background: #e9ecef;
+        }
+        
+        .website-name {
+            font-weight: 600;
+            color: #333;
+            font-size: 1rem;
+        }
+        
+        
+        .website-item.expanded .expand-arrow {
+            transform: rotate(180deg);
+        }
+        
+        .website-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+            padding: 0 20px;
+        }
+        
+        .website-item.expanded .website-content {
+            max-height: 650px;
+            padding: 20px;
+        }
+        
+        .view-website-btn {
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            display: inline-block;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 10;
+        }
+        
+        .view-website-btn:active {
+            transform: scale(0.95);
+        }
+        
+        .view-website-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        
+        .view-website-btn.primary:hover {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .view-website-btn.secondary {
+            background: transparent;
+            color: #666;
+            border: 1px solid #ddd;
+            font-weight: 500;
+        }
+        
+        .view-website-btn.secondary:hover {
+            background: #f5f5f5;
+            color: #333;
+            border-color: #bbb;
+        }
+        
+        .website-preview {
+            width: 100%;
+            height: 450px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            overflow: hidden;
+            background: #f8f9fa;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        
+        .website-preview:hover {
+            border-color: #667eea;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+            transform: translateY(-2px);
+        }
+        
+        .website-preview iframe {
+            width: 1200px;
+            height: 800px;
+            border: none;
+            background: white;
+            transform-origin: top left;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        /* Calculate scale based on container width */
+        @media (min-width: 901px) {
+            .website-preview iframe {
+                transform: scale(calc((900px - 80px) / 1200px)); /* 900px container - 40px padding each side */
+            }
+        }
+        
+        @media (max-width: 900px) {
+            .website-preview iframe {
+                transform: scale(calc((100vw - 120px) / 1200px)); /* viewport width - padding and margins */
+            }
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+            font-size: 1.1rem;
+        }
+        
+        .empty-state.hidden {
+            display: none;
+        }
+        
+        /* Mobile responsive scaling for previews */
+        @media (max-width: 768px) {
+            .website-preview {
+                height: 375px;
+            }
+            
+            .website-preview iframe {
+                width: 768px;
+                height: 1024px;
+                transform: scale(calc((100vw - 80px) / 768px));
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .websites-container {
+                padding: 30px 20px;
+            }
+            
+            .websites-container h2 {
+                font-size: 1.5rem;
+            }
+            
+            .website-header {
+                padding: 12px 15px;
+            }
+            
+            .website-item.expanded .website-content {
+                padding: 15px;
+            }
+            
+            .website-preview {
+                height: 300px;
+            }
+            
+            .website-preview iframe {
+                width: 375px;
+                height: 667px;
+                transform: scale(calc((100vw - 60px) / 375px));
             }
         }
     </style>
@@ -765,15 +1038,183 @@ async def serve_index():
         <div id="result" class="result"></div>
     </div>
 
+    <!-- Website List Container -->
+    <div class="websites-container" id="websitesContainer">
+        <h2>Generated Websites</h2>
+        <div id="websitesList" class="websites-list">
+            <!-- Website items will be populated by JavaScript -->
+        </div>
+        <div id="emptyState" class="empty-state">
+            <p>No websites generated yet. Generate your first website above!</p>
+        </div>
+    </div>
+
     <script>
         const form = document.getElementById('websiteForm');
         const urlInput = document.getElementById('url');
         const generateBtn = document.getElementById('generateBtn');
         const statusDiv = document.getElementById('status');
         const resultDiv = document.getElementById('result');
+        const websitesContainer = document.getElementById('websitesContainer');
+        const websitesList = document.getElementById('websitesList');
+        const emptyState = document.getElementById('emptyState');
         
         let currentJobId = null;
         let pollInterval = null;
+        let websites = [];
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            loadWebsites();
+        });
+
+        // Load websites from API
+        async function loadWebsites() {
+            try {
+                const response = await fetch('/websites');
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                
+                websites = await response.json();
+                renderWebsites();
+                
+            } catch (error) {
+                console.error('Failed to load websites:', error);
+                // Show empty state on error
+                showEmptyState();
+            }
+        }
+
+        // Render websites list
+        function renderWebsites() {
+            if (websites.length === 0) {
+                showEmptyState();
+                return;
+            }
+
+            hideEmptyState();
+            websitesList.innerHTML = '';
+            
+            websites.forEach((website, index) => {
+                const websiteItem = createWebsiteItem(website, index === 0 && website.isNew);
+                websitesList.appendChild(websiteItem);
+            });
+        }
+
+        // Create individual website item
+        function createWebsiteItem(website, isExpanded = false) {
+            const item = document.createElement('div');
+            item.className = `website-item${isExpanded ? ' expanded' : ''}`;
+            item.dataset.identifier = website.identifier;
+            
+            item.innerHTML = `
+                <div class="website-header">
+                    <div class="website-header-left" onclick="toggleWebsiteItem('${website.identifier}')">
+                        <span class="website-name">${website.identifier}</span>
+                    </div>
+                    <div class="website-header-right">
+                        <a href="/website/${website.identifier}" target="_blank" class="view-website-btn primary website-btn-expanded-only" onclick="event.stopPropagation()">
+                            ✨ View New Website
+                        </a>
+                        <a href="${website.original_url}" target="_blank" class="view-website-btn secondary website-btn-expanded-only" onclick="event.stopPropagation()" style="margin-right: 10px;">
+                            View Old Website
+                        </a>
+                        <span class="expand-arrow" onclick="toggleWebsiteItem('${website.identifier}')">▼</span>
+                    </div>
+                </div>
+                <div class="website-content">
+                    ${website.has_generated_html ? `
+                        <div class="website-preview" onclick="openWebsite('${website.identifier}')" style="cursor: pointer;">
+                            <iframe 
+                                src="/raw/${website.identifier}"
+                                sandbox="allow-scripts allow-same-origin allow-forms"
+                                loading="lazy"
+                                title="Website Preview for ${website.identifier}"
+                                style="pointer-events: none;">
+                            </iframe>
+                        </div>
+                    ` : `
+                        <div class="website-preview">
+                            <div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;">
+                                Still processing...
+                            </div>
+                        </div>
+                    `}
+                </div>
+            `;
+            
+            return item;
+        }
+
+        // Open website in new tab
+        function openWebsite(identifier) {
+            window.open(`/website/${identifier}`, '_blank');
+        }
+
+        // Toggle website item expand/collapse with accordion behavior
+        function toggleWebsiteItem(identifier) {
+            const clickedItem = document.querySelector(`[data-identifier="${identifier}"]`);
+            if (!clickedItem) return;
+            
+            const isCurrentlyExpanded = clickedItem.classList.contains('expanded');
+            
+            // Close all expanded items first
+            const allItems = document.querySelectorAll('.website-item');
+            allItems.forEach(item => {
+                item.classList.remove('expanded');
+            });
+            
+            // If the clicked item wasn't expanded, expand it
+            if (!isCurrentlyExpanded) {
+                clickedItem.classList.add('expanded');
+            }
+        }
+
+        // Show empty state
+        function showEmptyState() {
+            emptyState.classList.remove('hidden');
+            websitesList.innerHTML = '';
+            websitesContainer.classList.remove('show');
+        }
+
+        // Hide empty state
+        function hideEmptyState() {
+            emptyState.classList.add('hidden');
+            websitesContainer.classList.add('show');
+        }
+
+        // Add new website to top of list
+        function addNewWebsite(websiteData) {
+            // Mark as new for auto-expansion
+            websiteData.isNew = true;
+            
+            // Add to beginning of array
+            websites.unshift(websiteData);
+            
+            // Keep only 10 most recent
+            if (websites.length > 10) {
+                websites = websites.slice(0, 10);
+            }
+            
+            // Re-render (this will automatically expand the new item and close others)
+            renderWebsites();
+            
+            // Scroll to show the new expanded preview in the middle of the screen
+            setTimeout(() => {
+                const newWebsiteItem = document.querySelector(`[data-identifier="${websiteData.identifier}"]`);
+                if (newWebsiteItem) {
+                    const rect = newWebsiteItem.getBoundingClientRect();
+                    const viewportHeight = window.innerHeight;
+                    const targetScrollTop = window.scrollY + rect.top - (viewportHeight / 2) + (newWebsiteItem.offsetHeight / 2);
+                    
+                    window.scrollTo({
+                        top: targetScrollTop,
+                        behavior: 'smooth'
+                    });
+                }
+            }, 100); // Small delay to ensure rendering is complete
+        }
         
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -783,9 +1224,10 @@ async def serve_index():
             
             // Reset UI
             generateBtn.disabled = true;
-            generateBtn.textContent = 'Processing...';
-            statusDiv.className = 'status processing';
-            statusDiv.innerHTML = '<div class="spinner"></div>Starting website generation...';
+            generateBtn.className = 'btn loading';
+            generateBtn.innerHTML = '<span class="spinner"></span>Building modern website, this takes up to 10 seconds';
+            statusDiv.className = 'status';
+            statusDiv.innerHTML = '';
             resultDiv.className = 'result';
             resultDiv.innerHTML = '';
             
@@ -828,37 +1270,23 @@ async def serve_index():
                 
                 switch (job.status) {
                     case 'pending':
-                        statusDiv.innerHTML = '<div class="spinner"></div>Job queued, waiting to start...';
-                        break;
-                        
                     case 'processing':
-                        statusDiv.innerHTML = '<div class="spinner"></div>Processing website with AI...';
+                        // Keep button text as is, no status updates during processing
                         break;
                         
                     case 'completed':
-                        statusDiv.className = 'status success';
-                        statusDiv.innerHTML = '✅ Website generation completed successfully!';
+                        statusDiv.className = 'status show';
+                        statusDiv.innerHTML = 'Website created successfully!';
                         
-                        resultDiv.className = 'result show';
-                        resultDiv.innerHTML = `
-                            <p style="margin-bottom: 15px;">Your optimized website is ready!</p>
-                            <a href="/website/${job.identifier}" target="_blank" class="result-btn">
-                                🌐 View Website
-                            </a>
-                            
-                            <div class="preview-section">
-                                <h3 class="preview-title">Preview:</h3>
-                                <div class="preview-container">
-                                    <iframe 
-                                        src="/raw/${job.identifier}"
-                                        class="preview-iframe"
-                                        sandbox="allow-scripts allow-same-origin allow-forms"
-                                        loading="lazy"
-                                        title="Website Preview">
-                                    </iframe>
-                                </div>
-                            </div>
-                        `;
+                        // Add new website to the list (will appear in expanded view)
+                        const newWebsiteData = {
+                            id: job.website_id,
+                            identifier: job.identifier,
+                            original_url: urlInput.value.trim(),
+                            created_at: new Date().toISOString(),
+                            has_generated_html: true
+                        };
+                        addNewWebsite(newWebsiteData);
                         
                         clearInterval(pollInterval);
                         resetForm();
@@ -884,13 +1312,17 @@ async def serve_index():
         }
         
         function showError(message) {
-            statusDiv.className = 'status error';
-            statusDiv.innerHTML = `❌ ${message}`;
+            statusDiv.className = 'status show';
+            statusDiv.innerHTML = `Error: ${message}`;
+            generateBtn.className = 'btn';
         }
         
         function resetForm() {
             generateBtn.disabled = false;
+            generateBtn.className = 'btn';
             generateBtn.textContent = 'Generate Optimized Website';
+            statusDiv.className = 'status';
+            statusDiv.innerHTML = '';
             currentJobId = null;
         }
     </script>
