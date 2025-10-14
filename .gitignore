@@ -2,7 +2,6 @@
 .env
 
 # Docker generated files
-optimized_website.html
 
 # Python cache
 __pycache__/

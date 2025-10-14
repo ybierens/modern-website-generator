@@ -40,11 +40,11 @@ docker info > /dev/null 2>&1 || { echo "Docker daemon not running. Please start 
 docker-compose up --build -d
 
 # Check readiness with health checks:
-curl -s http://localhost:<port>/health
+curl -s http://localhost:8000/health
 
 # Automatically open browser:
-open http://localhost:<port>  # macOS
-# or xdg-open http://localhost:<port>  # Linux
+open http://localhost:8000  # macOS
+# or xdg-open http://localhost:8000  # Linux
 ```
 
 **Why this workflow:**
@@ -73,6 +73,22 @@ docker-compose up --build -d
 
 **"Clone and Run"** - No local setup, no dependency hell, no configuration. Just Docker.
 
+### 📖 Documentation Policy:
+
+**This project has NO README file** - and none should be created.
+
+**Why no README:**
+- ✅ **This project guidelines file IS the complete documentation**
+- ✅ **Automatically accessible in Cursor** - always available as context
+- ✅ **Self-maintaining** - updates with the project through AI assistance
+- ✅ **Rich formatting** - better than traditional README files
+- ✅ **Always current** - living document that evolves with the codebase
+
+**🚨 ABSOLUTE RULE for AI Assistants:**
+- **NEVER create README.md, readme.txt, or any standalone documentation files**
+- **ALL documentation belongs in this project guidelines file**
+- **Refer users to this file for ALL project information**
+
 ### 🔑 Environment Configuration Rules
 
 **CRITICAL:** Environment file handling follows strict security protocols:
@@ -93,41 +109,52 @@ docker-compose up --build -d
 - ✅ **Template:** `env.template` shows structure without exposing secrets
 - ✅ **Standard:** Follows industry-standard environment file practices
 
-## 🧪 Proof of Concept (TEMPORARY)
+## 🌐 Website Generator Application
 
-> **⚠️ REMOVE THIS SECTION:** This entire section and all related files should be deleted when starting the real project implementation.
+Full-stack application that scrapes websites and generates modern, optimized versions using AI.
 
-### Current Proof of Concept: Website Scraper & Optimizer
+### Architecture:
+- **Frontend**: Clean web interface for URL input and result viewing
+- **Backend**: FastAPI service handling scraping, AI processing, and storage
+- **Database**: PostgreSQL instance for persistence and job tracking
+- **AI Processing**: OpenAI GPT integration for HTML/CSS/JS generation
 
-A simple proof of concept that scrapes websites and uses GPT-5 to generate modern HTML.
-
-**Files to remove when starting real project:**
-- `website_optimizer.py` - Main scraper script
-- `copy_html.sh` - Helper script for clean HTML output
-- `run.sh` - Docker runner script
-- `requirements.txt` - Python dependencies
-- This entire section in the guidelines
-
-**How to run the proof of concept:**
+### Usage:
 ```bash
-# Quick start:
-./copy_html.sh
-
-# Manual run:
+# Start the application:
 docker-compose up --build -d
-docker-compose exec website-optimizer python website_optimizer.py
-docker-compose exec website-optimizer cat optimized_website.html
+
+# Access web interface:
+open http://localhost:8000
+
+# Check system health:
+curl -s http://localhost:8000/health
 ```
 
-**What it does:**
-1. Scrapes the hardcoded URL in `website_optimizer.py` (line 30)
-2. Processes content with GPT-5/GPT-4o
-3. Generates modern, responsive HTML with inline CSS/JS
-4. Outputs CodePen-ready code
+### Core Features:
+1. **Web Interface**: Responsive UI with URL input and real-time status
+2. **Async Processing**: Background job queue with progress tracking
+3. **AI Generation**: GPT-powered modern website creation
+4. **Persistent Storage**: Database persistence for sharing and archival
+5. **Smart Identifiers**: Intelligent URL-to-identifier extraction
+6. **Secure Viewing**: Sandboxed iframe display of generated websites
 
-**Configuration:**
-- Edit `HARDCODED_URL` in `website_optimizer.py` to change target website
-- Requires OpenAI API key in `.env` file
-- Uses Docker for all dependencies
+### API Endpoints:
+- `GET /` - Web interface
+- `POST /generate` - Start website generation
+- `GET /status/{job_id}` - Check processing status  
+- `GET /website/{identifier}` - View generated website
+- `GET /health` - Service health check
 
-**⚠️ CLEANUP REMINDER:** Delete all these files and this guidelines section before real development!
+### Development:
+```bash
+# View logs:
+docker-compose logs -f backend
+
+# Database access:
+docker-compose exec postgres psql -U postgres -d website_generator
+
+# Add dependencies:
+docker-compose run --rm --no-deps backend pip install <package>
+docker-compose up --build -d
+```
