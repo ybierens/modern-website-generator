@@ -171,9 +171,160 @@ def scrape_website(url: str) -> Dict[str, Any]:
         raise Exception(f"Failed to parse website content: {str(e)}")
 
 
+def analyze_business_type(scraped_data: Dict[str, Any]) -> Dict[str, str]:
+    """
+    Analyze the website content to determine business type and appropriate styling.
+    
+    Args:
+        scraped_data: Dictionary containing scraped website data
+        
+    Returns:
+        Dictionary with business type, color scheme, and styling preferences
+    """
+    content = (scraped_data.get('content', '') + ' ' + 
+               scraped_data.get('title', '') + ' ' + 
+               scraped_data.get('meta_description', '')).lower()
+    
+    # Business type detection keywords
+    business_types = {
+        'restaurant': ['restaurant', 'food', 'menu', 'dining', 'chef', 'kitchen', 'cuisine', 'eat', 'drink', 'bar', 'cafe', 'pizza', 'burger', 'sushi', 'italian', 'chinese', 'mexican'],
+        'retail': ['shop', 'store', 'buy', 'sale', 'product', 'shopping', 'fashion', 'clothing', 'shoes', 'jewelry', 'electronics', 'gadgets'],
+        'automotive': ['car', 'auto', 'vehicle', 'dealership', 'truck', 'motorcycle', 'repair', 'service', 'parts', 'tire', 'honda', 'toyota', 'ford', 'bmw'],
+        'healthcare': ['doctor', 'medical', 'health', 'clinic', 'hospital', 'dental', 'therapy', 'wellness', 'fitness', 'gym', 'yoga', 'massage'],
+        'technology': ['tech', 'software', 'app', 'digital', 'computer', 'programming', 'development', 'ai', 'data', 'cloud', 'cyber'],
+        'real_estate': ['real estate', 'property', 'home', 'house', 'apartment', 'rent', 'buy', 'sell', 'realtor', 'mortgage'],
+        'education': ['school', 'university', 'college', 'education', 'learning', 'course', 'training', 'academy', 'institute'],
+        'finance': ['bank', 'financial', 'investment', 'loan', 'credit', 'insurance', 'accounting', 'tax', 'money'],
+        'beauty': ['beauty', 'salon', 'spa', 'cosmetic', 'makeup', 'hair', 'nail', 'skincare', 'aesthetic'],
+        'legal': ['law', 'attorney', 'legal', 'lawyer', 'court', 'justice', 'advocate', 'counsel'],
+        'travel': ['travel', 'hotel', 'vacation', 'trip', 'booking', 'flight', 'tourism', 'destination']
+    }
+    
+    # Count keyword matches for each business type
+    type_scores = {}
+    for business_type, keywords in business_types.items():
+        score = sum(1 for keyword in keywords if keyword in content)
+        if score > 0:
+            type_scores[business_type] = score
+    
+    # Determine the most likely business type
+    if type_scores:
+        business_type = max(type_scores, key=type_scores.get)
+    else:
+        business_type = 'general'
+    
+    # Define color schemes and styling for each business type
+    style_themes = {
+        'restaurant': {
+            'primary_color': '#e74c3c',  # Red
+            'secondary_color': '#f39c12',  # Orange
+            'accent_color': '#27ae60',  # Green
+            'background': 'warm',
+            'mood': 'cozy, inviting, appetizing',
+            'fonts': 'friendly, approachable'
+        },
+        'retail': {
+            'primary_color': '#3498db',  # Blue
+            'secondary_color': '#9b59b6',  # Purple
+            'accent_color': '#e67e22',  # Orange
+            'background': 'clean',
+            'mood': 'modern, trustworthy, professional',
+            'fonts': 'clean, modern'
+        },
+        'automotive': {
+            'primary_color': '#2c3e50',  # Dark blue-gray
+            'secondary_color': '#e74c3c',  # Red
+            'accent_color': '#f39c12',  # Orange
+            'background': 'strong',
+            'mood': 'powerful, reliable, masculine',
+            'fonts': 'bold, strong'
+        },
+        'healthcare': {
+            'primary_color': '#27ae60',  # Green
+            'secondary_color': '#3498db',  # Blue
+            'accent_color': '#2ecc71',  # Light green
+            'background': 'calm',
+            'mood': 'clean, trustworthy, calming',
+            'fonts': 'clean, professional'
+        },
+        'technology': {
+            'primary_color': '#9b59b6',  # Purple
+            'secondary_color': '#3498db',  # Blue
+            'accent_color': '#e74c3c',  # Red
+            'background': 'futuristic',
+            'mood': 'innovative, modern, cutting-edge',
+            'fonts': 'modern, tech-forward'
+        },
+        'real_estate': {
+            'primary_color': '#8e44ad',  # Purple
+            'secondary_color': '#27ae60',  # Green
+            'accent_color': '#f39c12',  # Orange
+            'background': 'elegant',
+            'mood': 'luxurious, trustworthy, professional',
+            'fonts': 'elegant, sophisticated'
+        },
+        'education': {
+            'primary_color': '#2980b9',  # Blue
+            'secondary_color': '#27ae60',  # Green
+            'accent_color': '#f39c12',  # Orange
+            'background': 'academic',
+            'mood': 'knowledgeable, inspiring, professional',
+            'fonts': 'readable, academic'
+        },
+        'finance': {
+            'primary_color': '#2c3e50',  # Dark blue-gray
+            'secondary_color': '#27ae60',  # Green
+            'accent_color': '#f39c12',  # Orange
+            'background': 'professional',
+            'mood': 'trustworthy, secure, professional',
+            'fonts': 'professional, conservative'
+        },
+        'beauty': {
+            'primary_color': '#e91e63',  # Pink
+            'secondary_color': '#9c27b0',  # Purple
+            'accent_color': '#ff9800',  # Orange
+            'background': 'elegant',
+            'mood': 'beautiful, luxurious, feminine',
+            'fonts': 'elegant, stylish'
+        },
+        'legal': {
+            'primary_color': '#2c3e50',  # Dark blue-gray
+            'secondary_color': '#34495e',  # Gray
+            'accent_color': '#e74c3c',  # Red
+            'background': 'formal',
+            'mood': 'authoritative, trustworthy, professional',
+            'fonts': 'formal, authoritative'
+        },
+        'travel': {
+            'primary_color': '#3498db',  # Blue
+            'secondary_color': '#27ae60',  # Green
+            'accent_color': '#f39c12',  # Orange
+            'background': 'adventurous',
+            'mood': 'exciting, adventurous, inspiring',
+            'fonts': 'friendly, adventurous'
+        },
+        'general': {
+            'primary_color': '#667eea',  # Blue-purple
+            'secondary_color': '#764ba2',  # Purple
+            'accent_color': '#f093fb',  # Pink
+            'background': 'modern',
+            'mood': 'professional, modern, clean',
+            'fonts': 'modern, clean'
+        }
+    }
+    
+    theme = style_themes.get(business_type, style_themes['general'])
+    
+    return {
+        'business_type': business_type,
+        'confidence': type_scores.get(business_type, 0),
+        'theme': theme
+    }
+
+
 def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
     """
-    Generate optimized HTML using OpenAI GPT.
+    Generate optimized HTML using OpenAI GPT with business-specific styling.
     
     Args:
         scraped_data: Dictionary containing scraped website data
@@ -184,12 +335,19 @@ def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
     try:
         print("🤖 Generating optimized HTML with GPT...")
         
+        # Analyze business type for styling
+        business_analysis = analyze_business_type(scraped_data)
+        print(f"🎨 Detected business type: {business_analysis['business_type']} (confidence: {business_analysis['confidence']})")
+        
         # Setup OpenAI client
         api_key = os.getenv('OPENAI_API_KEY')
         if not api_key:
             raise Exception("OPENAI_API_KEY not found in environment variables")
         
         client = OpenAI(api_key=api_key)
+        
+        theme = business_analysis['theme']
+        business_type = business_analysis['business_type']
         
         prompt = f"""
 Create a complete, modern, responsive HTML document based on this website content:
@@ -200,12 +358,36 @@ Meta Description: {scraped_data.get('meta_description', '')}
 Content to redesign and optimize:
 {scraped_data['content'][:2500]}
 
-Requirements:
+BUSINESS TYPE ANALYSIS:
+- Detected business type: {business_type}
+- Primary color: {theme['primary_color']}
+- Secondary color: {theme['secondary_color']}
+- Accent color: {theme['accent_color']}
+- Design mood: {theme['mood']}
+- Font style: {theme['fonts']}
+
+STYLING REQUIREMENTS:
+- Use the detected business type colors: {theme['primary_color']}, {theme['secondary_color']}, {theme['accent_color']}
+- Create a design that feels {theme['mood']}
+- Use {theme['fonts']} typography
+- Make the design appropriate for a {business_type} business
+- If it's a restaurant, use warm, appetizing colors and food-focused imagery
+- If it's automotive, use strong, powerful colors and sleek design
+- If it's healthcare, use clean, calming colors and professional styling
+- If it's technology, use modern, futuristic colors and tech-forward design
+- If it's retail, use clean, trustworthy colors and product-focused layout
+- If it's real estate, use elegant, luxurious colors and property-focused design
+- If it's education, use academic, inspiring colors and knowledge-focused layout
+- If it's finance, use professional, trustworthy colors and conservative design
+- If it's beauty, use elegant, luxurious colors and beauty-focused design
+- If it's legal, use authoritative, professional colors and formal design
+- If it's travel, use adventurous, exciting colors and destination-focused design
+
+GENERAL REQUIREMENTS:
 - Generate a COMPLETE HTML document with inline CSS and JavaScript
 - Make it modern, beautiful, and responsive (mobile-first design)
 - Use CSS Grid/Flexbox for layout
 - Include smooth animations and transitions
-- Use a professional color scheme with good contrast
 - Add hover effects and micro-interactions
 - Ensure accessibility (proper semantic HTML, alt attributes, ARIA labels)
 - Include proper meta tags for SEO
@@ -214,7 +396,7 @@ Requirements:
 - Transform the original content into an engaging, visual experience
 - Include a hero section with the main message
 - Organize content in logical sections
-- Add a subtle background pattern or gradient
+- Add a subtle background pattern or gradient that matches the business type
 
 Generate ONLY the complete HTML code - nothing else. Start with <!DOCTYPE html> and end with </html>.
 Make sure all CSS and JavaScript is inline within the HTML document.
@@ -287,6 +469,11 @@ def generate_fallback_html(scraped_data: Dict[str, Any]) -> str:
     Returns:
         Fallback HTML string
     """
+    # Analyze business type for fallback styling too
+    business_analysis = analyze_business_type(scraped_data)
+    theme = business_analysis['theme']
+    business_type = business_analysis['business_type']
+    
     return f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -305,7 +492,7 @@ def generate_fallback_html(scraped_data: Dict[str, Any]) -> str:
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             line-height: 1.6;
             color: #333;
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            background: linear-gradient(135deg, {theme['primary_color']}20 0%, {theme['secondary_color']}20 100%);
             min-height: 100vh;
         }}
         
@@ -316,7 +503,7 @@ def generate_fallback_html(scraped_data: Dict[str, Any]) -> str:
         }}
         
         .hero {{
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, {theme['primary_color']} 0%, {theme['secondary_color']} 100%);
             color: white;
             padding: 80px 20px;
             text-align: center;
@@ -345,10 +532,11 @@ def generate_fallback_html(scraped_data: Dict[str, Any]) -> str:
             border-radius: 15px;
             box-shadow: 0 10px 30px rgba(0,0,0,0.1);
             margin-bottom: 30px;
+            border-left: 4px solid {theme['primary_color']};
         }}
         
         .content h2 {{
-            color: #667eea;
+            color: {theme['primary_color']};
             margin-bottom: 20px;
             font-size: 2rem;
         }}
@@ -367,6 +555,17 @@ def generate_fallback_html(scraped_data: Dict[str, Any]) -> str:
             font-size: 0.9rem;
         }}
         
+        .business-type {{
+            display: inline-block;
+            background: {theme['accent_color']};
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }}
+        
         @media (max-width: 768px) {{
             .hero {{
                 padding: 60px 20px;
@@ -381,6 +580,7 @@ def generate_fallback_html(scraped_data: Dict[str, Any]) -> str:
 <body>
     <div class="container">
         <div class="hero">
+            <div class="business-type">{business_type.title()} Business</div>
             <h1>{scraped_data['title']}</h1>
             <p>Optimized and modernized website experience</p>
         </div>
