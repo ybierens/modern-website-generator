@@ -22,7 +22,7 @@ from .models import (
 )
 from .utils import (
     extract_identifier, scrape_website, generate_optimized_html, 
-    ensure_unique_identifier
+    ensure_unique_identifier, process_images
 )
 
 # Create FastAPI application
@@ -124,14 +124,18 @@ async def process_website_async(job_id: UUID, url: str):
         
         print(f"💾 Created website record: {website_id}")
         
-        # Step 4: Generate optimized HTML
+        # Step 4: Process images and convert to Cloudinary URLs
+        print(f"🖼️ Processing images...")
+        scraped_data = await process_images(scraped_data, website_id)
+        
+        # Step 5: Generate optimized HTML
         print(f"🤖 Generating HTML with AI...")
         generated_html = generate_optimized_html(scraped_data)
         
-        # Step 5: Update website with generated HTML
+        # Step 6: Update website with generated HTML
         await db.update_website_html(website_id, generated_html)
         
-        # Step 6: Mark job as completed
+        # Step 7: Mark job as completed
         await db.update_job_status(job_id, "completed", website_id=website_id)
         active_jobs[str(job_id)] = {
             "status": "completed", 

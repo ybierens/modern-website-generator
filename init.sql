@@ -34,6 +34,19 @@ CREATE TABLE IF NOT EXISTS jobs (
 CREATE INDEX IF NOT EXISTS idx_jobs_status ON jobs(status);
 CREATE INDEX IF NOT EXISTS idx_jobs_created_at ON jobs(created_at DESC);
 
+-- Create image_mappings table for Cloudinary URL mappings
+CREATE TABLE IF NOT EXISTS image_mappings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    website_id UUID REFERENCES websites(id) ON DELETE CASCADE,
+    original_url TEXT NOT NULL,
+    cloudinary_url TEXT NOT NULL,
+    alt_text TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Create index on image_mappings
+CREATE INDEX IF NOT EXISTS idx_image_mappings_website_id ON image_mappings(website_id);
+
 -- Function to automatically update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$

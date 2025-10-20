@@ -7,8 +7,8 @@ web scraping, and GPT-based HTML generation.
 
 import re
 import hashlib
-from urllib.parse import urlparse
-from typing import Dict, Any, Tuple
+from urllib.parse import urlparse, urljoin
+from typing import Dict, Any, Tuple, List
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
@@ -155,11 +155,15 @@ def scrape_website(url: str) -> Dict[str, Any]:
         meta_desc = soup.find('meta', attrs={'name': 'description'})
         meta_description = meta_desc.get('content', '') if meta_desc else ""
         
+        # Extract images
+        images = extract_images_from_html(original_html, url)
+        
         return {
             'title': title,
             'content': content,
             'meta_description': meta_description,
             'original_html': original_html,
+            'images': images,
             'url': url
         }
         
@@ -169,6 +173,254 @@ def scrape_website(url: str) -> Dict[str, Any]:
     except Exception as e:
         print(f"❌ Error parsing content: {e}")
         raise Exception(f"Failed to parse website content: {str(e)}")
+
+
+def extract_images_from_html(html: str, base_url: str) -> List[Dict[str, str]]:
+    """
+    Extract image URLs and metadata from HTML content.
+    Captures regular img tags, lazy-loaded images, CSS background images, and SVGs.
+    
+    Args:
+        html: The HTML content to parse
+        base_url: The base URL for converting relative URLs
+        
+    Returns:
+        List of dictionaries containing image data
+    """
+    try:
+        soup = BeautifulSoup(html, 'html.parser')
+        images = []
+        seen_urls = set()  # Prevent duplicates
+        
+        def normalize_url(url):
+            """Convert relative URLs to absolute URLs."""
+            if not url or url.startswith('data:'):
+                return None
+                
+            # Convert relative URLs to absolute
+            if url.startswith('//'):
+                url = 'https:' + url
+            elif url.startswith('/'):
+                parsed_base = urlparse(base_url)
+                url = f"{parsed_base.scheme}://{parsed_base.netloc}{url}"
+            elif not url.startswith(('http://', 'https://')):
+                url = urljoin(base_url, url)
+            
+            return url
+        
+        def add_image(src, alt='', title='', source='img'):
+            """Add an image to the list if it's valid and not duplicate."""
+            if not src:
+                return
+                
+            normalized_src = normalize_url(src)
+            if not normalized_src or normalized_src in seen_urls:
+                return
+                
+            # Skip very small images likely to be tracking pixels or tiny icons
+            if 'pixel' in normalized_src.lower() or '1x1' in normalized_src.lower():
+                return
+                
+            seen_urls.add(normalized_src)
+            images.append({
+                'src': normalized_src,
+                'alt': alt,
+                'title': title,
+                'width': '',
+                'height': '',
+                'source': source  # Track where we found it
+            })
+        
+        # 1. Find all img tags with src attribute
+        img_tags = soup.find_all('img')
+        for img in img_tags:
+            src = img.get('src')
+            if src:
+                add_image(src, img.get('alt', ''), img.get('title', ''), 'img-src')
+        
+        # 2. Find lazy-loaded images with data-src attributes
+        lazy_imgs = soup.find_all(attrs={'data-src': True})
+        for img in lazy_imgs:
+            data_src = img.get('data-src')
+            if data_src:
+                add_image(data_src, img.get('alt', ''), img.get('title', ''), 'data-src')
+        
+        # 3. Find other common lazy loading attributes
+        for attr in ['data-lazy-src', 'data-original', 'data-bg']:
+            lazy_elements = soup.find_all(attrs={attr: True})
+            for element in lazy_elements:
+                lazy_src = element.get(attr)
+                if lazy_src:
+                    add_image(lazy_src, element.get('alt', ''), element.get('title', ''), attr)
+        
+        # 4. Find CSS background images in style attributes
+        style_elements = soup.find_all(attrs={'style': True})
+        for element in style_elements:
+            style = element.get('style', '')
+            # Extract background-image URLs using regex
+            import re
+            bg_matches = re.findall(r'background-image:\s*url\(["\']?([^"\'()]+)["\']?\)', style, re.IGNORECASE)
+            for bg_url in bg_matches:
+                add_image(bg_url.strip(), '', '', 'css-background')
+        
+        # 5. Find srcset attributes (responsive images)
+        srcset_elements = soup.find_all(attrs={'srcset': True})
+        for element in srcset_elements:
+            srcset = element.get('srcset', '')
+            # Parse srcset: "url1 1x, url2 2x" or "url1 480w, url2 800w"
+            srcset_urls = re.findall(r'([^\s,]+)(?:\s+[0-9.]+[wx])?', srcset)
+            for srcset_url in srcset_urls:
+                srcset_url = srcset_url.strip()
+                if srcset_url and not srcset_url.startswith('data:'):
+                    add_image(srcset_url, element.get('alt', ''), element.get('title', ''), 'srcset')
+        
+        # 6. Find picture elements with source tags
+        picture_elements = soup.find_all('picture')
+        for picture in picture_elements:
+            sources = picture.find_all('source')
+            for source in sources:
+                if source.get('srcset'):
+                    srcset_urls = re.findall(r'([^\s,]+)(?:\s+[0-9.]+[wx])?', source.get('srcset'))
+                    for srcset_url in srcset_urls:
+                        add_image(srcset_url.strip(), '', '', 'picture-source')
+        
+        # 7. Include SVG images (previously excluded)
+        svg_imgs = soup.find_all('img', src=re.compile(r'\.svg', re.IGNORECASE))
+        for svg in svg_imgs:
+            src = svg.get('src')
+            if src:
+                add_image(src, svg.get('alt', ''), svg.get('title', ''), 'svg')
+        
+        print(f"🖼️ Extracted {len(images)} images from HTML ({len(seen_urls)} unique URLs)")
+        
+        # Debug: Show breakdown by source type
+        source_counts = {}
+        for img in images:
+            source = img.get('source', 'unknown')
+            source_counts[source] = source_counts.get(source, 0) + 1
+        
+        if source_counts:
+            breakdown = ', '.join([f"{count} {source}" for source, count in source_counts.items()])
+            print(f"📊 Image sources: {breakdown}")
+        
+        return images
+        
+    except Exception as e:
+        print(f"⚠️ Error extracting images: {e}")
+        return []
+
+
+def convert_to_cloudinary_url(original_url: str) -> str:
+    """
+    Convert an image URL to Cloudinary auto-fetch URL.
+    
+    Args:
+        original_url: The original image URL
+        
+    Returns:
+        Cloudinary auto-fetch URL or None if cloud name not configured
+    """
+    cloud_name = os.getenv('CLOUDINARY_CLOUD_NAME')
+    if not cloud_name:
+        print("⚠️ CLOUDINARY_CLOUD_NAME not configured")
+        return None
+        
+    return f"https://res.cloudinary.com/{cloud_name}/image/fetch/{original_url}"
+
+
+def test_url_accessibility(url: str) -> bool:
+    """
+    Test if an image URL is accessible.
+    
+    Args:
+        url: The URL to test
+        
+    Returns:
+        True if accessible, False otherwise
+    """
+    try:
+        response = requests.head(url, timeout=5, allow_redirects=True)
+        return response.status_code == 200
+    except Exception:
+        return False
+
+
+async def process_images(scraped_data: Dict[str, Any], website_id: str) -> Dict[str, Any]:
+    """
+    Process images by converting to Cloudinary URLs and updating HTML.
+    
+    Args:
+        scraped_data: The scraped website data
+        website_id: The website ID for database storage
+        
+    Returns:
+        Updated scraped data with processed images and modified HTML
+    """
+    from .database import db
+    
+    try:
+        images = scraped_data.get('images', [])
+        if not images:
+            print("📷 No images found to process")
+            return scraped_data
+        
+        print(f"🔄 Processing {len(images)} images...")
+        
+        # Process each image
+        processed_images = []
+        url_mappings = {}
+        
+        for img_data in images:
+            original_url = img_data['src']
+            
+            # Test if URL is accessible
+            if not test_url_accessibility(original_url):
+                print(f"⚠️ Skipping inaccessible image: {original_url}")
+                continue
+            
+            # Convert to Cloudinary URL
+            cloudinary_url = convert_to_cloudinary_url(original_url)
+            if not cloudinary_url:
+                print(f"⚠️ Could not create Cloudinary URL for: {original_url}")
+                continue
+            
+            # Store mapping in database
+            try:
+                await db.create_image_mapping(
+                    website_id=website_id,
+                    original_url=original_url,
+                    cloudinary_url=cloudinary_url,
+                    alt_text=img_data.get('alt', '')
+                )
+                
+                url_mappings[original_url] = cloudinary_url
+                processed_images.append({
+                    **img_data,
+                    'cloudinary_url': cloudinary_url
+                })
+                
+                print(f"✅ Processed image: {original_url} → Cloudinary")
+                
+            except Exception as e:
+                print(f"❌ Error storing image mapping: {e}")
+                continue
+        
+        # Replace URLs in HTML
+        updated_html = scraped_data['original_html']
+        for original_url, cloudinary_url in url_mappings.items():
+            updated_html = updated_html.replace(original_url, cloudinary_url)
+        
+        # Update scraped data
+        scraped_data['original_html'] = updated_html
+        scraped_data['processed_images'] = processed_images
+        scraped_data['image_mappings'] = url_mappings
+        
+        print(f"🎉 Successfully processed {len(processed_images)} images")
+        return scraped_data
+        
+    except Exception as e:
+        print(f"❌ Error processing images: {e}")
+        return scraped_data
 
 
 def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
@@ -191,11 +443,25 @@ def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
         
         client = OpenAI(api_key=api_key)
         
+        # Prepare image information for the prompt
+        image_info = ""
+        if scraped_data.get('processed_images'):
+            image_list = []
+            for img in scraped_data['processed_images']:
+                img_line = f"- {img.get('cloudinary_url', img['src'])}"
+                if img.get('alt'):
+                    img_line += f" (alt: {img['alt']})"
+                image_list.append(img_line)
+            image_info = f"""
+
+Available Images (USE THESE EXACT URLs):
+{chr(10).join(image_list)}"""
+
         prompt = f"""
 Create a complete, modern, responsive HTML document based on this website content:
 
 Original Website: {scraped_data['title']} ({scraped_data['url']})
-Meta Description: {scraped_data.get('meta_description', '')}
+Meta Description: {scraped_data.get('meta_description', '')}{image_info}
 
 Content to redesign and optimize:
 {scraped_data['content'][:2500]}
@@ -211,10 +477,25 @@ Requirements:
 - Include proper meta tags for SEO
 - Make it work perfectly as a standalone HTML file
 - Use modern web design trends (clean design, good typography, whitespace)
-- Transform the original content into an engaging, visual experience
-- Include a hero section with the main message
-- Organize content in logical sections
-- Add a subtle background pattern or gradient
+
+CONTENT PRESERVATION GUIDELINES:
+- PRESERVE the core business messaging, value propositions, and key taglines from the original content
+- MAINTAIN any strategic wording, calls-to-action, and marketing copy that the business has carefully chosen
+- RESPECT the original brand voice and tone while modernizing the visual presentation
+- Transform the design and layout to be engaging and modern, but keep the essential business messaging intact
+- Include a hero section with the main message from the original content
+
+IMAGE USAGE GUIDELINES:
+- IMPORTANT: If images are provided above, use the EXACT URLs shown - they are already optimized and hosted
+- ONLY use images where they contextually make sense for the content and support the business purpose
+- Ensure each image adds value and relevance to the section where it's placed
+- Do not use images purely for decoration if they don't relate to the business or content
+- Consider the business context when positioning images within the layout
+
+LAYOUT & ORGANIZATION:
+- Organize content in logical sections that reflect the original business structure
+- Add a subtle background pattern or gradient that complements the brand
+- Maintain content hierarchy that supports the business goals
 
 Generate ONLY the complete HTML code - nothing else. Start with <!DOCTYPE html> and end with </html>.
 Make sure all CSS and JavaScript is inline within the HTML document.

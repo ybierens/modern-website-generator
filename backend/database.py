@@ -186,6 +186,42 @@ class Database:
                 limit
             )
             return [WebsiteRecord(**dict(row)) for row in rows]
+    
+    async def create_image_mapping(self, website_id: UUID, original_url: str, cloudinary_url: str, alt_text: str = None) -> UUID:
+        """Create a new image mapping record."""
+        async with self.pool.acquire() as connection:
+            mapping_id = uuid4()
+            await connection.execute(
+                """
+                INSERT INTO image_mappings (id, website_id, original_url, cloudinary_url, alt_text, created_at)
+                VALUES ($1, $2, $3, $4, $5, NOW())
+                """,
+                mapping_id, website_id, original_url, cloudinary_url, alt_text
+            )
+            return mapping_id
+    
+    async def get_image_mappings(self, website_id: UUID) -> Dict[str, str]:
+        """Get all image URL mappings for a website as a dictionary."""
+        async with self.pool.acquire() as connection:
+            rows = await connection.fetch(
+                "SELECT original_url, cloudinary_url FROM image_mappings WHERE website_id = $1",
+                website_id
+            )
+            return {row['original_url']: row['cloudinary_url'] for row in rows}
+    
+    async def get_website_images(self, website_id: UUID) -> List[Dict]:
+        """Get all image mapping records for a website."""
+        async with self.pool.acquire() as connection:
+            rows = await connection.fetch(
+                """
+                SELECT id, original_url, cloudinary_url, alt_text, created_at 
+                FROM image_mappings 
+                WHERE website_id = $1 
+                ORDER BY created_at
+                """,
+                website_id
+            )
+            return [dict(row) for row in rows]
 
 
 # Global database instance
