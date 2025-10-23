@@ -510,6 +510,13 @@ Make sure all CSS and JavaScript is inline within the HTML document.
         for model in models_to_try:
             try:
                 print(f"🔍 Trying model: {model}")
+                
+                # Log the exact prompt being sent
+                print("📝 OpenAI Prompt Input:")
+                print("=" * 80)
+                print(prompt)
+                print("=" * 80)
+                
                 response = client.chat.completions.create(
                     model=model,
                     messages=[
@@ -525,6 +532,12 @@ Make sure all CSS and JavaScript is inline within the HTML document.
                 
                 html_content = response.choices[0].message.content.strip()
                 model_used = model
+                
+                # Log the exact response content from OpenAI
+                print(f"📥 OpenAI Response Output from {model}:")
+                print("=" * 80)
+                print(html_content[:1000] + ("..." if len(html_content) > 1000 else ""))  # Show first 1000 chars
+                print("=" * 80)
                 print(f"✅ {model} generated {len(html_content)} characters of HTML!")
                 
                 # Validate that we got substantial content
