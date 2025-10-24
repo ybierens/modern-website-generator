@@ -1,0 +1,174 @@
+{
+  "slug": "example-wohop",
+  "name": "Wo Hop Restaurant",
+  "tagline": "The iconic restaurant in New York City's Chinatown since 1938",
+  "heroImage": "/_imports/example-wohop/hero.jpg",
+  "logo": "/_imports/example-wohop/logo.jpg",
+  "phone": "(212) 962-8617",
+  "email": "info@wohop17.com",
+  "address": {
+    "street": "17 Mott Street",
+    "city": "New York",
+    "state": "NY",
+    "postalCode": "10013",
+    "country": "USA",
+    "googleMapsUrl": "https://maps.google.com/?q=17+Mott+Street+New+York+NY+10013"
+  },
+  "hours": [
+    {
+      "day": "Monday",
+      "open": "11:00 AM",
+      "close": "10:00 PM"
+    },
+    {
+      "day": "Tuesday",
+      "open": "11:00 AM",
+      "close": "10:00 PM"
+    },
+    {
+      "day": "Wednesday",
+      "open": "11:00 AM",
+      "close": "10:00 PM"
+    },
+    {
+      "day": "Thursday",
+      "open": "11:00 AM",
+      "close": "10:00 PM"
+    },
+    {
+      "day": "Friday",
+      "open": "11:00 AM",
+      "close": "11:00 PM"
+    },
+    {
+      "day": "Saturday",
+      "open": "11:00 AM",
+      "close": "11:00 PM"
+    },
+    {
+      "day": "Sunday",
+      "open": "11:00 AM",
+      "close": "10:00 PM"
+    }
+  ],
+  "reservationUrl": "https://resy.com/wohop",
+  "orderOnlineUrl": "https://wohop17.com/order",
+  "social": {
+    "instagram": "https://instagram.com/wohop17",
+    "facebook": "https://facebook.com/wohop17",
+    "x": "https://x.com/wohop17"
+  },
+  "sections": [
+    {
+      "title": "Our History",
+      "body": "Since 1938, Wo Hop has been serving authentic Chinese cuisine in the heart of New York City's Chinatown. We're proud to be one of the oldest restaurants in the neighborhood, continuing the tradition of serving delicious, affordable meals to locals and visitors alike.\n\nOur family-owned restaurant has been passed down through generations, maintaining the same recipes and commitment to quality that made us a Chinatown institution. We specialize in traditional Cantonese dishes, American-Chinese favorites, and authentic regional specialties.",
+      "image": "/_imports/example-wohop/history.jpg"
+    },
+    {
+      "title": "Award-Winning Cuisine",
+      "body": "In 2022, Wo Hop was honored to receive the James Beard Foundation America's Classics Award, recognizing our contribution to American culinary culture. This prestigious award celebrates restaurants that have been serving their communities for decades while maintaining their original character and quality.\n\nOur menu features time-tested recipes that have delighted customers for over 80 years, from our famous chop suey to our authentic dim sum and traditional Cantonese dishes.",
+      "image": "/_imports/example-wohop/award.jpg"
+    }
+  ],
+  "reviews": [
+    {
+      "source": "Google",
+      "text": "Amazing authentic Chinese food! The chop suey is incredible and the service is always friendly. A true Chinatown gem.",
+      "rating": 5,
+      "author": "Sarah M."
+    },
+    {
+      "source": "Yelp",
+      "text": "Been coming here for years. The food is consistently great and the prices are very reasonable. Love the old-school atmosphere.",
+      "rating": 5,
+      "author": "Mike L."
+    },
+    {
+      "source": "Google",
+      "text": "Best Chinese restaurant in Chinatown! The portions are huge and everything tastes fresh. Highly recommend the dumplings.",
+      "rating": 5,
+      "author": "Jennifer K."
+    }
+  ],
+  "menu": [
+    {
+      "name": "Appetizers",
+      "items": [
+        {
+          "name": "Pork Dumplings",
+          "description": "Traditional steamed dumplings filled with seasoned pork",
+          "price": "$8.95",
+          "image": "/_imports/example-wohop/dumplings.jpg"
+        },
+        {
+          "name": "Spring Rolls",
+          "description": "Crispy vegetable spring rolls with sweet and sour sauce",
+          "price": "$6.95",
+          "dietary": ["veg"]
+        },
+        {
+          "name": "Wonton Soup",
+          "description": "Clear broth with pork wontons and fresh vegetables",
+          "price": "$7.95"
+        }
+      ]
+    },
+    {
+      "name": "Main Dishes",
+      "items": [
+        {
+          "name": "Beef Chow Mein",
+          "description": "Stir-fried noodles with tender beef and fresh vegetables",
+          "price": "$14.95",
+          "image": "/_imports/example-wohop/chow-mein.jpg"
+        },
+        {
+          "name": "Sweet and Sour Pork",
+          "description": "Crispy pork with bell peppers and pineapple in tangy sauce",
+          "price": "$16.95"
+        },
+        {
+          "name": "Kung Pao Chicken",
+          "description": "Diced chicken with peanuts, vegetables, and spicy sauce",
+          "price": "$15.95",
+          "dietary": ["spicy"]
+        },
+        {
+          "name": "Vegetable Lo Mein",
+          "description": "Soft noodles with mixed vegetables in light sauce",
+          "price": "$12.95",
+          "dietary": ["veg"]
+        }
+      ]
+    },
+    {
+      "name": "Specialties",
+      "items": [
+        {
+          "name": "Peking Duck",
+          "description": "Traditional roasted duck served with pancakes and hoisin sauce",
+          "price": "$28.95",
+          "image": "/_imports/example-wohop/peking-duck.jpg"
+        },
+        {
+          "name": "Lobster with Ginger and Scallions",
+          "description": "Fresh lobster stir-fried with ginger, scallions, and garlic",
+          "price": "$32.95"
+        }
+      ]
+    }
+  ],
+  "images": [
+    "/_imports/example-wohop/hero.jpg",
+    "/_imports/example-wohop/logo.jpg",
+    "/_imports/example-wohop/history.jpg",
+    "/_imports/example-wohop/award.jpg"
+  ],
+  "theme": {
+    "primary": "#b91c1c",
+    "accent": "#111827",
+    "heroOverlay": "rgba(0,0,0,0.35)"
+  },
+  "sourceUrl": "https://www.wohop17.com/",
+  "lastScrapedAt": "2024-01-15T10:30:00.000Z"
+}

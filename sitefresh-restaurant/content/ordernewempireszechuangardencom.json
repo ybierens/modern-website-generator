@@ -1,0 +1,51 @@
+{
+  "slug": "ordernewempireszechuangardencom",
+  "name": "Empire Szechuan Garden",
+  "tagline": "43-42 46th St, Sunnyside, NY 11104. Empire Szechuan Garden is known for its Asian, Chinese, Dinner, and Lunch. Online ordering available!",
+  "logo": "https://res.cloudinary.com/grubhub/image/upload/w_90,h_90,f_auto,fl_lossy,q_100,c_fit/lqvi7iiwcy2ufnnoxlve",
+  "phone": "+17183619625",
+  "address": {
+    "street": "43-42 46th St",
+    "city": "Sunnyside",
+    "state": "NY",
+    "postalCode": "11104-2002",
+    "country": "US"
+  },
+  "social": {},
+  "sections": [
+    {
+      "title": "Top dishes",
+      "body": "Top dishesChicken with Broccoli Dinner SpecialServed with your choice of rice and side.$8.50\n        General Tso's Chicken Dinner SpecialServed with your choice of rice and side. Spicy.$8.50\n        Lo Mein Dinner SpecialServed with your choice of rice and side.$8.00\n        Chow Mein Dinner SpecialServed with your choice of rice and side.$8.00\n        Pepper Steak with Onion Dinner SpecialServed with your choice of rice and side.$8.50\n        Hungry for more?\n        There’s still more delicious dishes to discover.\n      View full menu"
+    },
+    {
+      "title": "Our reviews",
+      "body": "Our reviewsReviews from Grubhub\n    Derek\n  \n      1 review\n    The food is delicious! The best part is that delivery is always earlier than estimated.\n    Elisa\n  \n      1 review\n    The food was good and they even called to make sure they got the order right\n    Andrew\n  \n      3 reviews\n    The tastiest and most consistent take out spot in the area.\n    Kristine\n  \n      Top Reviewer\n    Best cold noodles in the area, really great food here.\n    Jenise\n  \n      Top Reviewer\n    Was craving but apprehensive and was fully satisfied",
+      "image": "/70ffff6c4943bc2798c547361d0c853e.svg"
+    },
+    {
+      "title": "Reviews from Seamless.com",
+      "body": "Reviews from Seamless.com\n    Tracy\n  \n      1 review\n    The service was speedy and attentive! The system messed up my address and instead of turning around they called and were patient. I forgot to ask for white rice instead of pork fried rice (I've never been a fan of it) but it was so well done, I didn't mind!\n    Jonathan\n  \n      4 reviews\n    Ordered the Sesame Chicken dinner special with pork fried rice and egg roll.  Good meal as always and a lot of food for the price.  My go to Chinese food place in Sunnyside.\n    Melissa\n  \n      Top Reviewer\n    My only complaint is that the house noodle soup did not include actual noodles, but 2 bags of those crunchy noodles most places supply as an addition.\n    Jonathan\n  \n      2 reviews\n    I love this place....it is my \"go-to\" place when I am hungry and need some good Asian food, FAST! They are all so nice and kind in the shop as well.\n    Mohamed\n  \n      Top Reviewer\n    Best chinese spot in Queens. Love their food and their portions. Always great quality and good delivery time. Currently my go to chinese place!",
+      "image": "/cfe5ab7e31df5fb163f4260042f415f5.svg"
+    },
+    {
+      "title": "About us",
+      "body": "About us\n  43-42 46th St, Sunnyside, NY 11104\n(718) 361-9625Asian, Chinese, Dinner, LunchToday\n        Delivery: 11:00 AM - 9:30 PM\n      \n        Takeout: 11:00 AM - 9:30 PM"
+    }
+  ],
+  "reviews": [],
+  "menu": [],
+  "images": [
+    "https://res.cloudinary.com/grubhub/image/upload/w_90,h_90,f_auto,fl_lossy,q_100,c_fit/lqvi7iiwcy2ufnnoxlve",
+    "https://res.cloudinary.com/grubhub-dev/image/upload/w_960,f_auto/whitelabel/w_chinese_cuisine",
+    "https://res.cloudinary.com/grubhub/image/upload/w_70,h_70,f_auto,fl_lossy,q_100,c_fit/lqvi7iiwcy2ufnnoxlve",
+    "/70ffff6c4943bc2798c547361d0c853e.svg",
+    "/cfe5ab7e31df5fb163f4260042f415f5.svg"
+  ],
+  "theme": {
+    "primary": "#b91c1c",
+    "accent": "#111827",
+    "heroOverlay": "rgba(0,0,0,0.35)"
+  },
+  "sourceUrl": "http://www.ordernewempireszechuangarden.com/",
+  "lastScrapedAt": "2025-10-24T19:20:02.143Z"
+}
