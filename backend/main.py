@@ -1229,7 +1229,7 @@ async def serve_index():
             // Reset UI
             generateBtn.disabled = true;
             generateBtn.className = 'btn loading';
-            generateBtn.innerHTML = '<span class="spinner"></span>Building modern website, this takes up to 10 seconds';
+            generateBtn.innerHTML = '<span class="spinner"></span>Building modern website, this takes up to 20 seconds';
             statusDiv.className = 'status';
             statusDiv.innerHTML = '';
             resultDiv.className = 'result';

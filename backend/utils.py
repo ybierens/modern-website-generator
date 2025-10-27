@@ -425,16 +425,18 @@ async def process_images(scraped_data: Dict[str, Any], website_id: str) -> Dict[
 
 def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
     """
-    Generate optimized HTML using OpenAI GPT.
+    Generate optimized HTML using OpenAI GPT with professional template guidance.
     
     Args:
         scraped_data: Dictionary containing scraped website data
         
     Returns:
-        Generated HTML string
+        Generated HTML string following professional template patterns
     """
+    from .template_guidance import get_template_guidance, get_content_integration_requirements, get_technical_constraints
+    
     try:
-        print("🤖 Generating optimized HTML with GPT...")
+        print("🤖 Generating template-guided HTML with GPT...")
         
         # Setup OpenAI client
         api_key = os.getenv('OPENAI_API_KEY')
@@ -454,51 +456,41 @@ def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
                 image_list.append(img_line)
             image_info = f"""
 
-Available Images (USE THESE EXACT URLs):
-{chr(10).join(image_list)}"""
+=== AVAILABLE IMAGES (USE THESE EXACT URLs) ===
+{chr(10).join(image_list)}
 
-        prompt = f"""
-Create a complete, modern, responsive HTML document based on this website content:
+"""
 
-Original Website: {scraped_data['title']} ({scraped_data['url']})
-Meta Description: {scraped_data.get('meta_description', '')}{image_info}
+        # Build comprehensive template-guided prompt
+        prompt = f"""{get_template_guidance()}
 
-Content to redesign and optimize:
+=== RESTAURANT DATA TO CUSTOMIZE ===
+
+Restaurant Name: {scraped_data['title']}
+Original Website: {scraped_data['url']}
+Meta Description: {scraped_data.get('meta_description', 'Professional restaurant with quality food and service')}{image_info}
+
+Content to integrate with template:
 {scraped_data['content'][:2500]}
 
-Requirements:
-- Generate a COMPLETE HTML document with inline CSS and JavaScript
-- Make it modern, beautiful, and responsive (mobile-first design)
-- Use CSS Grid/Flexbox for layout
-- Include smooth animations and transitions
-- Use a professional color scheme with good contrast
-- Add hover effects and micro-interactions
-- Ensure accessibility (proper semantic HTML, alt attributes, ARIA labels)
-- Include proper meta tags for SEO
-- Make it work perfectly as a standalone HTML file
-- Use modern web design trends (clean design, good typography, whitespace)
+{get_content_integration_requirements()}
 
-CONTENT PRESERVATION GUIDELINES:
-- PRESERVE the core business messaging, value propositions, and key taglines from the original content
-- MAINTAIN any strategic wording, calls-to-action, and marketing copy that the business has carefully chosen
-- RESPECT the original brand voice and tone while modernizing the visual presentation
-- Transform the design and layout to be engaging and modern, but keep the essential business messaging intact
-- Include a hero section with the main message from the original content
+{get_technical_constraints()}
 
-IMAGE USAGE GUIDELINES:
-- IMPORTANT: If images are provided above, use the EXACT URLs shown - they are already optimized and hosted
-- ONLY use images where they contextually make sense for the content and support the business purpose
-- Ensure each image adds value and relevance to the section where it's placed
-- Do not use images purely for decoration if they don't relate to the business or content
-- Consider the business context when positioning images within the layout
+=== GENERATION INSTRUCTIONS ===
 
-LAYOUT & ORGANIZATION:
-- Organize content in logical sections that reflect the original business structure
-- Add a subtle background pattern or gradient that complements the brand
-- Maintain content hierarchy that supports the business goals
+You must create a complete, professional restaurant website that EXACTLY follows the template specification above while customizing all content for this specific restaurant.
 
-Generate ONLY the complete HTML code - nothing else. Start with <!DOCTYPE html> and end with </html>.
-Make sure all CSS and JavaScript is inline within the HTML document.
+CRITICAL REQUIREMENTS:
+1. Follow the template architecture precisely - every layout specification must be implemented
+2. Use the restaurant's actual data to populate all content sections
+3. Implement the exact visual design system specified (typography, colors, spacing, components)
+4. Include all accessibility and SEO requirements as detailed
+5. Generate ONLY the complete HTML code - no explanations or markdown formatting
+6. Start with <!DOCTYPE html> and end with </html>
+7. Make all CSS and JavaScript inline within the HTML document
+
+The result must be a beautiful, professional restaurant website that matches the template's quality while showcasing this restaurant's unique content and branding.
 """
 
         # Try different models with fallbacks
