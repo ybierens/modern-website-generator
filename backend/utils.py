@@ -433,7 +433,7 @@ def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
     Returns:
         Generated HTML string following professional template patterns
     """
-    from .template_guidance import get_template_guidance, get_content_integration_requirements, get_technical_constraints
+    from .template_guidance import get_template_guidance, get_content_integration_requirements, get_technical_constraints, get_design_guidance
     
     try:
         print("🤖 Generating template-guided HTML with GPT...")
@@ -475,6 +475,8 @@ Content to integrate with template:
 
 {get_content_integration_requirements()}
 
+{get_design_guidance()}
+
 {get_technical_constraints()}
 
 === GENERATION INSTRUCTIONS ===
@@ -490,7 +492,14 @@ CRITICAL REQUIREMENTS:
 6. Start with <!DOCTYPE html> and end with </html>
 7. Make all CSS and JavaScript inline within the HTML document
 
-The result must be a beautiful, professional restaurant website that matches the template's quality while showcasing this restaurant's unique content and branding.
+OUTPUT FORMAT REQUIREMENTS:
+- Output ONLY raw HTML code - absolutely NO markdown code blocks, NO explanations, NO ``` markers
+- Start immediately with <!DOCTYPE html> - no preamble, no commentary
+- End with </html> - nothing after it
+- Ensure the HTML is properly formatted and indented for readability
+- Include ALL functionality inline (CSS and JavaScript within the HTML)
+
+The result must be a beautiful, professional restaurant website that matches the template's quality while showcasing this restaurant's unique content and branding. The website should look polished, modern, and ready for production use.
 """
 
         # Try different models with fallbacks
@@ -514,11 +523,11 @@ The result must be a beautiful, professional restaurant website that matches the
                     messages=[
                         {
                             "role": "system", 
-                            "content": "You are an expert frontend developer who creates beautiful, complete HTML documents with inline CSS and JavaScript. Always respond with only HTML code, no explanations or markdown formatting."
+                            "content": "You are an expert frontend developer specializing in creating beautiful, modern, production-ready HTML documents. You excel at implementing professional templates with inline CSS and JavaScript. You ALWAYS output only raw HTML code - no markdown, no code blocks, no explanations. Your HTML is clean, semantic, accessible, and visually stunning."
                         },
                         {"role": "user", "content": prompt}
                     ],
-                    max_tokens=4000,
+                    max_tokens=6000,
                     temperature=0.7
                 )
                 

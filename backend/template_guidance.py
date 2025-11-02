@@ -16,6 +16,8 @@ def get_template_guidance() -> str:
     return """
 === PROFESSIONAL RESTAURANT WEBSITE TEMPLATE SPECIFICATION ===
 
+IMPORTANT: You must create a complete, working, standalone HTML file that looks professional and modern. Every section must be fully implemented with proper styling and functionality.
+
 You must follow this exact template architecture while customizing content for the specific restaurant.
 
 LAYOUT ARCHITECTURE:
@@ -161,7 +163,37 @@ TECHNICAL REQUIREMENTS:
 - Cross-browser compatibility with modern web standards
 - Clean, maintainable code structure with proper commenting
 
-The AI must follow this template architecture precisely while customizing all content, colors, and branding to match the specific restaurant's identity and scraped data.
+QUALITY REQUIREMENTS:
+
+Code Quality:
+- Write clean, semantic HTML5 with proper indentation
+- Use meaningful class names that describe purpose (e.g., "hero-section", "menu-grid", not "div1", "box2")
+- Include comments for major sections to improve readability
+- Ensure all CSS is organized logically (base styles, layout, components, utilities)
+- Keep JavaScript minimal but functional - only what's needed for interactions
+
+Visual Polish:
+- Add subtle animations and transitions to enhance user experience (fade-ins, slide-ins on scroll)
+- Use consistent spacing throughout (8px grid system)
+- Ensure proper visual hierarchy with contrasting colors and sizes
+- Include hover effects on interactive elements (buttons, cards, links)
+- Add depth with shadows, borders, and background variations
+
+Content Presentation:
+- Break up long text blocks with proper paragraph spacing
+- Use bullet points or lists when appropriate for readability
+- Include visual separators between sections
+- Add meaningful section titles that describe content
+- Ensure important information stands out (contact info, hours, CTA buttons)
+
+Performance & Best Practices:
+- Minimize CSS and JavaScript complexity
+- Use efficient selectors (avoid deep nesting)
+- Include proper DOCTYPE and meta tags
+- Test that the HTML renders correctly in all modern browsers
+- Ensure the layout adapts smoothly across all breakpoints
+
+The AI must follow this template architecture precisely while customizing all content, colors, and branding to match the specific restaurant's identity and scraped data. The output MUST be a complete, functional, professional website ready for immediate use.
 
 ===
 """
@@ -183,6 +215,8 @@ Content Preservation:
 - RESPECT original brand voice and tone while modernizing visual presentation only
 - INCLUDE hero section with main message from original content prominently displayed
 - ORGANIZE content in logical sections reflecting original business structure
+- EXTRACT and highlight key unique selling points from the scraped content
+- PRESENT menu items, specials, or featured offerings in an attractive format
 
 Image Integration:
 - USE ONLY the provided Cloudinary URLs - they are optimized and accessible
@@ -190,6 +224,8 @@ Image Integration:
 - ENSURE each image adds value to its section rather than being purely decorative
 - CONSIDER business context when positioning images within the layout structure
 - IMPLEMENT proper alt attributes based on image content and business context
+- USE at least 2-3 images strategically throughout the website for visual appeal
+- PRIORITIZE images that showcase food, ambiance, or key business aspects
 
 Business Information Accuracy:
 - DISPLAY contact information (phone, email, address) exactly as scraped
@@ -197,6 +233,15 @@ Business Information Accuracy:
 - INCLUDE social media links with proper accessibility and hover states
 - MAINTAIN any specific business terminology, specialties, or unique selling points
 - PRESERVE pricing information and menu details with accurate formatting
+- EXTRACT cuisine type, specialties, and key business attributes from content
+- HIGHLIGHT any awards, certifications, or notable achievements mentioned
+
+Content Enhancement:
+- PARAPHRASE and restructure content while preserving core meaning for better readability
+- ADD descriptive subheadings to break up content sections logically
+- CREATE compelling introductions for each major section
+- EMPHASIZE benefits and features in a scannable format (lists, highlights)
+- ENSURE call-to-action buttons are clear, prominent, and action-oriented
 
 Layout Organization:
 - STRUCTURE content hierarchy to support business goals and user flow
@@ -204,6 +249,54 @@ Layout Organization:
 - BALANCE information density with visual breathing room and whitespace
 - ENSURE critical business information is prominently featured and easily accessible
 - IMPLEMENT clear navigation between different content sections and pages
+- PLACE most important information above the fold in hero/main section
+"""
+
+
+def get_design_guidance() -> str:
+    """
+    Return additional design guidance and best practices.
+    
+    Returns:
+        String containing design-specific recommendations
+    """
+    return """
+DESIGN INSPIRATION & BEST PRACTICES:
+
+Modern Web Design Principles:
+- Use ample whitespace to avoid visual clutter and improve readability
+- Create clear visual hierarchy with size, color, and positioning
+- Implement a cohesive color palette that complements the restaurant's brand
+- Add subtle gradient backgrounds or textured elements for visual interest
+- Use rounded corners (8-16px border-radius) for modern, friendly aesthetics
+
+Interactive Elements:
+- Include smooth transitions on all interactive elements (0.3s ease)
+- Add hover effects that provide clear feedback (scale, shadow, color change)
+- Implement scroll-triggered animations for content sections
+- Ensure buttons have clear states: normal, hover, active, focus
+- Use icons or graphics to break up text-heavy areas
+
+Content Organization:
+- Create multiple content sections to showcase different aspects (About, Menu, Location, Hours)
+- Use cards or panels to group related information visually
+- Implement a two-column layout for text/image combinations
+- Add background color variations between sections for visual separation
+- Include testimonials or reviews section if content supports it
+
+Visual Elements:
+- Use high-quality images as hero backgrounds with proper overlays
+- Implement grid-based layouts for galleries or menu items
+- Add decorative elements like subtle patterns or geometric shapes
+- Use consistent iconography throughout the site
+- Include social proof elements (star ratings, review counts, etc.)
+
+User Experience:
+- Make navigation intuitive and easy to understand
+- Ensure call-to-action buttons are prominent and action-oriented
+- Add breadcrumbs or clear page structure for orientation
+- Implement mobile-responsive hamburger menu for small screens
+- Provide multiple ways to contact (phone, email, form, map)
 """
 
 
