@@ -13,6 +13,7 @@ import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
 import os
+import json
 
 
 def extract_identifier(url: str) -> str:
@@ -345,6 +346,90 @@ def test_url_accessibility(url: str) -> bool:
         return False
 
 
+def select_template_for_website(scraped_data: Dict[str, Any]) -> str:
+    """
+    Use LLM to analyze scraped website and select the best template.
+    
+    Args:
+        scraped_data: Dictionary containing scraped website data
+        
+    Returns:
+        Template ID identifier (e.g., 'restaurant')
+    """
+    from .website_generator_templates import get_template_metadata, get_template_ids
+    
+    try:
+        print("🤔 Analyzing website to select best template...")
+        
+        # Setup OpenAI client
+        api_key = os.getenv('OPENAI_API_KEY')
+        if not api_key:
+            raise Exception("OPENAI_API_KEY not found in environment variables")
+        
+        client = OpenAI(api_key=api_key)
+        
+        # Get template metadata for selection
+        template_metadata = get_template_metadata()
+        available_ids = get_template_ids()
+        
+        # Build template options for the prompt
+        template_options = []
+        for template_id, metadata in template_metadata.items():
+            template_options.append(
+                f"- {template_id}: {metadata['name']}\n"
+                f"  {metadata['description']}"
+            )
+        
+        prompt = f"""Analyze this website and determine which template type would be most appropriate.
+
+WEBSITE DATA:
+Title: {scraped_data.get('title', 'N/A')}
+URL: {scraped_data.get('url', 'N/A')}
+Meta Description: {scraped_data.get('meta_description', 'N/A')}
+Content Preview: {scraped_data.get('content', '')[:1500]}
+
+AVAILABLE TEMPLATES:
+{chr(10).join(template_options)}
+
+Based on the website's content, purpose, and industry, select the SINGLE most appropriate template.
+
+Respond with ONLY a JSON object in this exact format:
+{{"template_id": "template_name"}}
+
+Where template_name is one of: {', '.join(available_ids)}"""
+
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",  # Use cheaper/faster model for selection
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an expert at analyzing websites and categorizing them. You respond with only valid JSON containing the template_id that best matches the website."
+                },
+                {"role": "user", "content": prompt}
+            ],
+            response_format={"type": "json_object"},
+            max_tokens=100,
+            temperature=0.3  # Lower temperature for more consistent selection
+        )
+        
+        # Parse JSON response
+        response_text = response.choices[0].message.content.strip()
+        response_data = json.loads(response_text)
+        selected_template = response_data.get("template_id", "").strip().lower()
+        
+        # Validate selection
+        if selected_template not in available_ids:
+            print(f"⚠️ Invalid template selection '{selected_template}', defaulting to 'restaurant'")
+            selected_template = "restaurant"
+        
+        print(f"✅ Selected template: {selected_template}")
+        return selected_template
+        
+    except Exception as e:
+        print(f"❌ Error selecting template: {e}")
+        return "restaurant"  # Safe default fallback
+
+
 async def process_images(scraped_data: Dict[str, Any], website_id: str) -> Dict[str, Any]:
     """
     Process images by converting to Cloudinary URLs and updating HTML.
@@ -423,20 +508,26 @@ async def process_images(scraped_data: Dict[str, Any], website_id: str) -> Dict[
         return scraped_data
 
 
-def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
+def generate_optimized_html(scraped_data: Dict[str, Any], template_id: str = "restaurant") -> str:
     """
-    Generate optimized HTML using OpenAI GPT with professional template guidance.
+    Generate optimized HTML using OpenAI GPT with selected template guidance.
     
     Args:
         scraped_data: Dictionary containing scraped website data
+        template_id: The template identifier to use for generation (default: "restaurant")
         
     Returns:
-        Generated HTML string following professional template patterns
+        Generated HTML string following selected template specifications
     """
-    from .template_guidance import get_template_guidance, get_content_integration_requirements, get_technical_constraints, get_design_guidance
+    from .website_generator_templates import get_template_content, template_exists
     
     try:
-        print("🤖 Generating template-guided HTML with GPT...")
+        print(f"🤖 Generating HTML with GPT using '{template_id}' template...")
+        
+        # Validate template exists
+        if not template_exists(template_id):
+            print(f"⚠️ Template '{template_id}' not found, falling back to 'restaurant'")
+            template_id = "restaurant"
         
         # Setup OpenAI client
         api_key = os.getenv('OPENAI_API_KEY')
@@ -444,6 +535,9 @@ def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
             raise Exception("OPENAI_API_KEY not found in environment variables")
         
         client = OpenAI(api_key=api_key)
+        
+        # Get template content for selected template
+        template_content = get_template_content(template_id)
         
         # Prepare image information for the prompt
         image_info = ""
@@ -462,30 +556,24 @@ def generate_optimized_html(scraped_data: Dict[str, Any]) -> str:
 """
 
         # Build comprehensive template-guided prompt
-        prompt = f"""{get_template_guidance()}
+        prompt = f"""{template_content}
 
-=== RESTAURANT DATA TO CUSTOMIZE ===
+=== BUSINESS DATA TO CUSTOMIZE ===
 
-Restaurant Name: {scraped_data['title']}
+Business Name: {scraped_data['title']}
 Original Website: {scraped_data['url']}
-Meta Description: {scraped_data.get('meta_description', 'Professional restaurant with quality food and service')}{image_info}
+Meta Description: {scraped_data.get('meta_description', 'Professional business with quality service')}{image_info}
 
 Content to integrate with template:
 {scraped_data['content'][:2500]}
 
-{get_content_integration_requirements()}
-
-{get_design_guidance()}
-
-{get_technical_constraints()}
-
 === GENERATION INSTRUCTIONS ===
 
-You must create a complete, professional restaurant website that EXACTLY follows the template specification above while customizing all content for this specific restaurant.
+You must create a complete, professional website that EXACTLY follows the template specification above while customizing all content for this specific business.
 
 CRITICAL REQUIREMENTS:
 1. Follow the template architecture precisely - every layout specification must be implemented
-2. Use the restaurant's actual data to populate all content sections
+2. Use the business's actual data to populate all content sections
 3. Implement the exact visual design system specified (typography, colors, spacing, components)
 4. Include all accessibility and SEO requirements as detailed
 5. Generate ONLY the complete HTML code - no explanations or markdown formatting
@@ -499,7 +587,7 @@ OUTPUT FORMAT REQUIREMENTS:
 - Ensure the HTML is properly formatted and indented for readability
 - Include ALL functionality inline (CSS and JavaScript within the HTML)
 
-The result must be a beautiful, professional restaurant website that matches the template's quality while showcasing this restaurant's unique content and branding. The website should look polished, modern, and ready for production use.
+The result must be a beautiful, professional website that matches the template's quality while showcasing this business's unique content and branding. The website should look polished, modern, and ready for production use.
 """
 
         # Try different models with fallbacks

@@ -75,7 +75,7 @@ class Database:
         async with self.pool.acquire() as connection:
             row = await connection.fetchrow(
                 """
-                SELECT id, identifier, original_url, original_html, generated_html, created_at, updated_at
+                SELECT id, identifier, original_url, original_html, generated_html, template_name, created_at, updated_at
                 FROM websites 
                 WHERE identifier = $1
                 """,
@@ -90,7 +90,7 @@ class Database:
         async with self.pool.acquire() as connection:
             row = await connection.fetchrow(
                 """
-                SELECT id, identifier, original_url, original_html, generated_html, created_at, updated_at
+                SELECT id, identifier, original_url, original_html, generated_html, template_name, created_at, updated_at
                 FROM websites 
                 WHERE id = $1
                 """,
@@ -178,7 +178,7 @@ class Database:
         async with self.pool.acquire() as connection:
             rows = await connection.fetch(
                 """
-                SELECT id, identifier, original_url, original_html, generated_html, created_at, updated_at
+                SELECT id, identifier, original_url, original_html, generated_html, template_name, created_at, updated_at
                 FROM websites 
                 ORDER BY created_at DESC 
                 LIMIT $1
@@ -222,6 +222,19 @@ class Database:
                 website_id
             )
             return [dict(row) for row in rows]
+    
+    async def update_website_template(self, website_id: UUID, template_name: str) -> bool:
+        """Update the template name for a website."""
+        async with self.pool.acquire() as connection:
+            result = await connection.execute(
+                """
+                UPDATE websites 
+                SET template_name = $1, updated_at = NOW()
+                WHERE id = $2
+                """,
+                template_name, website_id
+            )
+            return result == "UPDATE 1"
 
 
 # Global database instance

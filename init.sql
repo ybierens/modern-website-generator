@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS websites (
     original_url TEXT NOT NULL,
     original_html TEXT,
     generated_html TEXT,
+    template_name VARCHAR(100),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );

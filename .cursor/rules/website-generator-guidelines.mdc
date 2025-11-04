@@ -35,11 +35,12 @@ alwaysApply: true
    - **Explain potential issues** that could arise from the deviation
 
 ### Established Project Patterns:
-- **Template-Guided AI Generation** - All website generation must use the professional template guidance system
+- **Multi-Template AI Generation** - AI-powered template selection with professional template library
+- **Two-Stage AI Process** - Router LLM selects template, generator LLM creates website
 - **Docker-First Architecture** - All services containerized, no local dependencies
 - **FastAPI Backend** - Python-based API with async processing and database persistence
 - **Single-Command Deployment** - Maintain zero-configuration setup approach
-- **Professional Consistency** - Follow established visual design and layout patterns
+- **Professional Consistency** - Template-specific design patterns with automatic selection
 
 **🎯 Goal:** Preserve the integrity of this capstone project's carefully designed architecture and prevent deviations that could undermine the established professional template-guided approach.
 
@@ -146,13 +147,15 @@ docker-compose up --build -d
 
 ## 🌐 Website Generator Application
 
-Full-stack application that scrapes websites and generates modern, optimized versions using template-guided AI.
+Full-stack application that scrapes websites and generates modern, optimized versions using intelligent multi-template AI system.
 
 ### Architecture:
 - **Frontend**: Clean web interface for URL input and result viewing
-- **Backend**: FastAPI service handling scraping, template-guided AI processing, and storage
-- **Database**: PostgreSQL instance for persistence and job tracking
-- **AI Processing**: OpenAI GPT integration with professional template guidance for consistent, high-quality HTML/CSS/JS generation
+- **Backend**: FastAPI service handling scraping, AI template selection, generation, and storage
+- **Database**: PostgreSQL instance for persistence, job tracking, and template metadata
+- **AI Processing**: Two-stage OpenAI GPT integration
+  - **Stage 1 - Router**: GPT-4o-mini analyzes scraped content and selects optimal template
+  - **Stage 2 - Generator**: GPT-4o generates professional HTML/CSS/JS using selected template
 
 ### Usage:
 ```bash
@@ -169,27 +172,27 @@ curl -s http://localhost:8000/health
 ### Core Features:
 1. **Web Interface**: Responsive UI with URL input and real-time status
 2. **Async Processing**: Background job queue with progress tracking
-3. **Template-Guided AI Generation**: GPT-powered website creation following professional template specifications for consistent, high-quality results
-4. **Professional Template System**: Structured guidance using industry-standard web design patterns and specifications
-5. **Persistent Storage**: Database persistence for sharing and archival
-6. **Smart Identifiers**: Intelligent URL-to-identifier extraction
-7. **Secure Viewing**: Sandboxed iframe display of generated websites
+3. **AI-Powered Template Selection**: Intelligent router analyzes scraped content to select optimal template
+4. **Multi-Template Library**: Expandable collection of professional templates for different website types
+5. **Template-Guided Generation**: GPT-powered website creation following selected template specifications
+6. **Persistent Storage**: Database persistence with template tracking for sharing and archival
+7. **Smart Identifiers**: Intelligent URL-to-identifier extraction
+8. **Secure Viewing**: Sandboxed iframe display of generated websites
 
-### Template Guidance System:
-The AI generation process uses professional template specifications to ensure consistent, high-quality results:
+### Multi-Template System with AI Router:
+Two-stage AI process for intelligent template selection and website generation:
 
-- **Structured Layout Patterns**: Professional restaurant website architecture with header, hero, content sections, and footer
-- **Visual Design Standards**: Typography hierarchy, color systems, spacing grids, and component specifications
-- **Responsive Design**: Mobile-first approach with defined breakpoints and touch-friendly interactions
-- **Accessibility Compliance**: Semantic HTML, ARIA labels, keyboard navigation, and WCAG standards
-- **Performance Optimization**: Lazy loading, efficient CSS, and modern web standards
-- **Template Module**: `backend/template_guidance.py` contains detailed specifications using industry terminology
+**Stage 1 - Template Router (GPT-4o-mini):**
+Analyzes scraped content, selects appropriate template from library, returns JSON with template_id
 
-**Benefits:**
-- Consistent professional appearance across all generated websites
-- Proven design patterns for optimal user experience
-- Maintains AI flexibility for content customization while ensuring structural quality
-- No template maintenance burden - uses descriptive guidance instead of hard-coded templates
+**Stage 2 - Website Generator (GPT-4o):**
+Loads selected template specification, generates professional HTML/CSS/JS following template architecture
+
+**Template Library:**
+- Stored in `backend/website_generator_templates.py` as dict-of-dicts
+- Each template: name, description (for router), content (for generator)
+- Current: Restaurant & Food Service (expandable to portfolio, e-commerce, blog, etc.)
+- Database tracks which template was used for each website
 
 ### API Endpoints:
 - `GET /` - Web interface
@@ -197,6 +200,14 @@ The AI generation process uses professional template specifications to ensure co
 - `GET /status/{job_id}` - Check processing status  
 - `GET /website/{identifier}` - View generated website
 - `GET /health` - Service health check
+
+### Generation Pipeline:
+1. **Scraping**: Extract content, metadata, and images from original website
+2. **Image Processing**: Convert images to Cloudinary URLs for reliable hosting
+3. **Template Selection**: AI router analyzes content and selects appropriate template
+4. **Template Storage**: Selected template_id saved to database
+5. **HTML Generation**: AI generator creates website using selected template specifications
+6. **Storage & Display**: Generated HTML saved and made available for viewing
 
 ### Development:
 ```bash
@@ -209,4 +220,9 @@ docker-compose exec postgres psql -U postgres -d website_generator
 # Add dependencies:
 docker-compose run --rm --no-deps backend pip install <package>
 docker-compose up --build -d
+
+# Add new template:
+# 1. Edit backend/website_generator_templates.py
+# 2. Add new entry to TEMPLATES dict with name, description, and content
+# 3. Restart containers: docker-compose up --build -d
 ```

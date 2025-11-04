@@ -24,6 +24,7 @@ class WebsiteResponse(BaseModel):
     original_url: str
     created_at: datetime
     status: str = "completed"
+    template_name: Optional[str] = None
 
 
 class JobRequest(BaseModel):
@@ -56,6 +57,7 @@ class WebsiteRecord(BaseModel):
     original_url: str
     original_html: Optional[str] = None
     generated_html: Optional[str] = None
+    template_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 
