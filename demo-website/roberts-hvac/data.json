@@ -1,0 +1,111 @@
+{
+  "company": {
+    "name": "Roberts Heating & Air, LLC",
+    "tagline": "Relax. Trust your heating & air needs to us.",
+    "phones": ["859-873-9861", "859-785-7597"],
+    "emails": ["info@robertsheatair.com"],
+    "serviceAreas": ["Versailles", "Lawrenceburg", "Georgetown", "Frankfort", "Lexington", "surrounding counties"],
+    "addresses": {
+      "mailing": "457 Hunters Ridge Dr, Versailles, KY 40383",
+      "business": "380 A Crossfield Drive, Versailles, KY 40383"
+    },
+    "license": "HM04111",
+    "foundedCopy": "Family owned & operated since 1992 with honest, dependable service and upfront pricing.",
+    "sellingPoints": [
+      "Upfront pricing — no hidden fees",
+      "Install & repair all brands",
+      "10-year parts & labor warranty available",
+      "Financing options",
+      "Preventative maintenance program"
+    ],
+    "social": {
+      "google": "",
+      "facebook": "",
+      "instagram": "",
+      "yelp": ""
+    }
+  },
+  "nav": ["Home", "Services", "About", "Financing", "Maintenance", "Contact"],
+  "hero": {
+    "headline": "Get a Free Estimate on a New System Installation",
+    "subheadline": "Upfront pricing. No surprises.",
+    "primaryCta": "Request a Free Estimate",
+    "secondaryCta": "Call Now"
+  },
+  "services": [
+    {"title": "Heating", "desc": "Repair, tune-ups, and new installations."},
+    {"title": "Cooling", "desc": "AC repair, maintenance, and replacements."},
+    {"title": "Indoor Air Quality", "desc": "Healthy air solutions for a safer home."},
+    {"title": "Ductless Systems", "desc": "Efficient comfort without major ductwork."},
+    {"title": "Preventative Maintenance", "desc": "Lower bills and longer equipment life."}
+  ],
+  "expertise": [
+    "Heating Systems",
+    "Air Conditioning",
+    "Heat Pumps",
+    "Furnace Repair",
+    "AC Installation",
+    "Thermostat Service",
+    "Ductless HVAC",
+    "Air Purifiers",
+    "Humidifiers",
+    "UV Lights",
+    "Air Filtration",
+    "Emergency Repairs"
+  ],
+  "warranty": "10-year parts & labor warranty available on select systems.",
+  "financing": {
+    "headline": "Financing & Online Payments",
+    "items": [
+      "Pay online securely",
+      "Financing available on approved credit"
+    ]
+  },
+  "maintenanceProgram": {
+    "headline": "Preventative Maintenance Program",
+    "bullets": [
+      "Reduce energy usage and utility bills",
+      "Catch issues early and avoid breakdowns",
+      "Priority scheduling"
+    ],
+    "cta": "Join the Program"
+  },
+  "contact": {
+    "headline": "Contact Us",
+    "hours": "Mon–Fri 8am–6pm",
+    "notes": [
+      "An adult (18+) should be present for estimates, preferably a homeowner"
+    ]
+  },
+  "faqs": [
+    {"q": "Do you service all brands?", "a": "Yes, we service and install all major HVAC brands."},
+    {"q": "Do you offer financing?", "a": "Yes, financing is available; we can discuss options during your estimate."},
+    {"q": "Do you offer upfront pricing?", "a": "Always. No hidden fees."}
+  ],
+  "reviews": [
+    {"name": "Michelle J.", "rating": 5, "text": "I am very impressed with the service I received from Roberts Heating & Air. I sent in an inquiry form and within minutes I was on the phone with a representative helping me with my concerns. He explained everything clearly and offered short and long term solutions. I am very grateful for his help!"},
+    {"name": "John D.", "rating": 5, "text": "Outstanding service from start to finish! The technician arrived on time, diagnosed the problem quickly, and had our furnace running perfectly within an hour. Fair pricing and excellent communication throughout the entire process."},
+    {"name": "Sarah M.", "rating": 5, "text": "Roberts Heating & Air saved the day! Our AC went out during the hottest week of summer. They got someone out the same day and had us back up and running before dinner. Professional, friendly, and reasonably priced. We'll definitely use them again!"}
+  ],
+  "team": [
+    {"name": "John Roberts", "title": "Owner & Lead Technician", "icon": "👨‍🔧"},
+    {"name": "Sarah Roberts", "title": "Office Manager", "icon": "👩‍💼"},
+    {"name": "Mike Johnson", "title": "HVAC Specialist", "icon": "👨"}
+  ],
+  "helpfulLinks": [
+    {"text": "Schedule Service", "href": "#contact"},
+    {"text": "Careers", "href": "#contact"},
+    {"text": "Specials", "href": "#financing"},
+    {"text": "Financing", "href": "#financing"},
+    {"text": "Reviews", "href": "#reviews"}
+  ],
+  "legal": {
+    "copyright": "© 2025 Roberts Heating & Air, LLC",
+    "privacyText": "Privacy Policy",
+    "license": "License HM04111"
+  },
+  "schema": {
+    "type": "HVACBusiness"
+  }
+}
+
