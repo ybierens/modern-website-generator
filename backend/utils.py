@@ -148,7 +148,7 @@ def scrape_website(url: str) -> Dict[str, Any]:
         content = ' '.join(chunk for chunk in chunks if chunk)
         
         # Truncate if too long (for GPT processing)
-        max_length = 3000
+        max_length = 6000
         if len(content) > max_length:
             content = content[:max_length] + "..."
         
@@ -159,13 +159,19 @@ def scrape_website(url: str) -> Dict[str, Any]:
         # Extract images
         images = extract_images_from_html(original_html, url)
         
+        # Extract structured data
+        services = extract_service_items(soup)
+        business_hours = extract_business_hours(soup)
+        
         return {
             'title': title,
             'content': content,
             'meta_description': meta_description,
             'original_html': original_html,
             'images': images,
-            'url': url
+            'url': url,
+            'services': services,
+            'business_hours': business_hours
         }
         
     except requests.exceptions.RequestException as e:
@@ -309,6 +315,98 @@ def extract_images_from_html(html: str, base_url: str) -> List[Dict[str, str]]:
     except Exception as e:
         print(f"⚠️ Error extracting images: {e}")
         return []
+
+
+def extract_service_items(soup: BeautifulSoup) -> List[str]:
+    """
+    Extract potential service entries from page content.
+    
+    Args:
+        soup: BeautifulSoup object of the full HTML document
+        
+    Returns:
+        Ordered list of service strings
+    """
+    service_keywords = [
+        "service", "services", "treatment", "treatments", "cut", "color", "colour",
+        "style", "styling", "blowout", "blow-dry", "balayage", "highlight", "package",
+        "wax", "waxing", "massage", "facial", "manicure", "pedicure", "shave",
+        "beard", "groom", "trim", "extensions", "keratin", "perm", "updo", "makeup"
+    ]
+    
+    services: List[str] = []
+    seen: set[str] = set()
+    
+    def add_service(text: str):
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if not normalized:
+            return
+        key = normalized.lower()
+        if key not in seen:
+            seen.add(key)
+            services.append(normalized)
+    
+    # Scan list items first – common structure for menus
+    for li in soup.find_all("li"):
+        text = li.get_text(" ", strip=True)
+        if not text or len(text) > 220:
+            continue
+        lower = text.lower()
+        if any(keyword in lower for keyword in service_keywords):
+            add_service(text)
+    
+    # Fallback: capture short paragraphs/divs that mention services with pricing cues
+    if not services:
+        for tag in soup.find_all(["p", "div", "span"]):
+            text = tag.get_text(" ", strip=True)
+            if not text or len(text) > 180:
+                continue
+            lower = text.lower()
+            if any(keyword in lower for keyword in service_keywords):
+                if any(char.isdigit() for char in text) or "$" in text or "starting at" in lower:
+                    add_service(text)
+    
+    return services[:50]
+
+
+def extract_business_hours(soup: BeautifulSoup) -> List[str]:
+    """
+    Extract business hours strings from page content.
+    
+    Args:
+        soup: BeautifulSoup object of the full HTML document
+        
+    Returns:
+        Ordered list of business hour entries
+    """
+    day_pattern = re.compile(
+        r"\b(mon(?:day)?|tue(?:sday)?|wed(?:nesday)?|thu(?:rsday)?|fri(?:day)?|sat(?:urday)?|sun(?:day)?)\b",
+        re.IGNORECASE,
+    )
+    time_pattern = re.compile(r"\b\d{1,2}(:\d{2})?\s*(am|pm|a\.m\.|p\.m\.)\b", re.IGNORECASE)
+    
+    hours: List[str] = []
+    seen: set[str] = set()
+    
+    candidate_tags = soup.find_all(["li", "p", "div", "span", "td", "tr"])
+    
+    for tag in candidate_tags:
+        text = tag.get_text(" ", strip=True)
+        if not text:
+            continue
+        for line in [line.strip() for line in text.splitlines() if line.strip()]:
+            lower = line.lower()
+            if not day_pattern.search(lower):
+                continue
+            if not (time_pattern.search(lower) or "closed" in lower or "open" in lower):
+                continue
+            normalized = re.sub(r"\s+", " ", line)
+            key = normalized.lower()
+            if key not in seen:
+                seen.add(key)
+                hours.append(normalized)
+    
+    return hours[:20]
 
 
 def convert_to_cloudinary_url(original_url: str) -> str:
@@ -555,6 +653,30 @@ def generate_optimized_html(scraped_data: Dict[str, Any], template_id: str = "re
 
 """
 
+        services_info = ""
+        raw_services = scraped_data.get('services') or []
+        if raw_services:
+            service_lines = [f"- {service}" for service in raw_services[:25]]
+            services_info = f"""
+
+=== VERIFIED SERVICES FROM SOURCE ===
+{chr(10).join(service_lines)}
+
+"""
+
+        hours_info = ""
+        raw_hours = scraped_data.get('business_hours') or []
+        if raw_hours:
+            hour_lines = [f"- {entry}" for entry in raw_hours[:14]]
+            hours_info = f"""
+
+=== VERIFIED BUSINESS HOURS FROM SOURCE ===
+{chr(10).join(hour_lines)}
+
+"""
+
+        structured_details = f"{image_info}{services_info}{hours_info}"
+
         # Build comprehensive template-guided prompt
         prompt = f"""{template_content}
 
@@ -562,10 +684,10 @@ def generate_optimized_html(scraped_data: Dict[str, Any], template_id: str = "re
 
 Business Name: {scraped_data['title']}
 Original Website: {scraped_data['url']}
-Meta Description: {scraped_data.get('meta_description', 'Professional business with quality service')}{image_info}
+Meta Description: {scraped_data.get('meta_description', 'Professional business with quality service')}{structured_details}
 
 Content to integrate with template:
-{scraped_data['content'][:2500]}
+{scraped_data['content'][:4000]}
 
 === GENERATION INSTRUCTIONS ===
 
@@ -579,6 +701,7 @@ CRITICAL REQUIREMENTS:
 5. Generate ONLY the complete HTML code - no explanations or markdown formatting
 6. Start with <!DOCTYPE html> and end with </html>
 7. Make all CSS and JavaScript inline within the HTML document
+8. When verified services or business hours are provided above, use those entries exactly as given—do not fabricate, omit, or rename them
 
 OUTPUT FORMAT REQUIREMENTS:
 - Output ONLY raw HTML code - absolutely NO markdown code blocks, NO explanations, NO ``` markers
