@@ -6,7 +6,9 @@ handles async processing, and serves the web interface.
 """
 
 import asyncio
+import os
 from datetime import datetime
+from pathlib import Path
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -542,6 +544,54 @@ async def get_website(identifier: str):
         )
 
 
+# Demo website path
+demo_website_path = Path(__file__).parent.parent / "demo-website" / "roberts-hvac"
+
+@app.get("/demo/{file_path:path}")
+async def serve_demo_file(file_path: str):
+    """Serve files from the demo website."""
+    try:
+        full_path = demo_website_path / file_path
+        # Security: ensure file is within demo directory
+        if not str(full_path.resolve()).startswith(str(demo_website_path.resolve())):
+            raise HTTPException(status_code=403, detail="Access denied")
+        
+        if not full_path.exists():
+            raise HTTPException(status_code=404, detail="File not found")
+        
+        # Determine content type
+        content_type = "text/html"
+        if file_path.endswith(".js"):
+            content_type = "text/javascript"
+        elif file_path.endswith(".css"):
+            content_type = "text/css"
+        elif file_path.endswith(".json"):
+            content_type = "application/json"
+        elif file_path.endswith(".svg"):
+            content_type = "image/svg+xml"
+        
+        with open(full_path, "rb") as f:
+            content = f.read()
+        
+        return HTMLResponse(content=content, media_type=content_type)
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/demo")
+async def serve_demo_index():
+    """Serve the demo website index page."""
+    index_path = demo_website_path / "index.html"
+    if not index_path.exists():
+        raise HTTPException(status_code=404, detail="Demo website not found")
+    
+    with open(index_path, "r", encoding="utf-8") as f:
+        html_content = f.read()
+        # Add base tag to make relative paths work correctly
+        html_content = html_content.replace('<head>', '<head><base href="/demo/">')
+        return HTMLResponse(content=html_content, media_type="text/html")
+
 # Serve the main web interface
 @app.get("/", response_class=HTMLResponse)
 async def serve_index():
@@ -1041,6 +1091,13 @@ async def serve_index():
                 <input type="url" id="url" name="url" placeholder="https://example.com" required>
             </div>
             
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 20px; padding: 12px; background: #f8f9fa; border-radius: 8px;">
+                <input type="checkbox" id="demoCheckbox" style="width: 18px; height: 18px; cursor: pointer;">
+                <label for="demoCheckbox" style="margin: 0; cursor: pointer; color: #333; font-size: 0.95rem;">
+                    View demo website instead
+                </label>
+            </div>
+            
             <button type="submit" class="btn" id="generateBtn">
                 Generate Optimized Website
             </button>
@@ -1230,6 +1287,23 @@ async def serve_index():
         
         form.addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // Check if demo checkbox is checked
+            const demoCheckbox = document.getElementById('demoCheckbox');
+            if (demoCheckbox && demoCheckbox.checked) {
+                // Show loading state
+                generateBtn.disabled = true;
+                generateBtn.className = 'btn loading';
+                generateBtn.innerHTML = '<span class="spinner"></span>Building modern website, this takes up to 20 seconds';
+                statusDiv.className = 'status show';
+                statusDiv.innerHTML = 'Generating demo website...';
+                
+                // Wait 15 seconds before redirecting
+                setTimeout(() => {
+                    window.location.href = '/demo';
+                }, 15000);
+                return;
+            }
             
             const url = urlInput.value.trim();
             if (!url) return;
