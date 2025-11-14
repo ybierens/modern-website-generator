@@ -1291,7 +1291,17 @@ async def serve_index():
             // Check if demo checkbox is checked
             const demoCheckbox = document.getElementById('demoCheckbox');
             if (demoCheckbox && demoCheckbox.checked) {
-                window.location.href = '/demo';
+                // Show loading state
+                generateBtn.disabled = true;
+                generateBtn.className = 'btn loading';
+                generateBtn.innerHTML = '<span class="spinner"></span>Building modern website, this takes up to 20 seconds';
+                statusDiv.className = 'status show';
+                statusDiv.innerHTML = 'Generating demo website...';
+                
+                // Wait 15 seconds before redirecting
+                setTimeout(() => {
+                    window.location.href = '/demo';
+                }, 15000);
                 return;
             }
             
