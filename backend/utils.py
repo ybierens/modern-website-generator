@@ -458,12 +458,7 @@ async def process_images(scraped_data: Dict[str, Any], website_id: str) -> Dict[
         for img_data in images:
             original_url = img_data['src']
             
-            # Test if URL is accessible
-            if not test_url_accessibility(original_url):
-                print(f"⚠️ Skipping inaccessible image: {original_url}")
-                continue
-            
-            # Convert to Cloudinary URL
+            # Convert to Cloudinary URL (let Cloudinary handle broken URLs)
             cloudinary_url = convert_to_cloudinary_url(original_url)
             if not cloudinary_url:
                 print(f"⚠️ Could not create Cloudinary URL for: {original_url}")
@@ -590,57 +585,43 @@ OUTPUT FORMAT REQUIREMENTS:
 The result must be a beautiful, professional website that matches the template's quality while showcasing this business's unique content and branding. The website should look polished, modern, and ready for production use.
 """
 
-        # Try different models with fallbacks
-        models_to_try = ["gpt-4o", "gpt-4-turbo", "gpt-4"]
+        # Use GPT-5.1 with Responses API for high-quality code generation
+        print(f"🤖 Generating HTML with GPT-5.1 (high reasoning)...")
         
-        html_content = ""
-        model_used = ""
+        # System prompt for expert frontend developer
+        system_prompt = "You are an expert frontend developer specializing in creating beautiful, modern, production-ready HTML documents using Tailwind CSS. You excel at implementing professional templates with Tailwind utility classes and inline JavaScript. You are a master of Tailwind's utility-first approach and use it for ALL styling (layout, colors, typography, spacing, responsive design, hover states, transitions). You ALWAYS output only raw HTML code - no markdown, no code blocks, no explanations. Your HTML is clean, semantic, accessible, visually stunning, and leverages Tailwind CSS via CDN for all styling needs."
         
-        for model in models_to_try:
-            try:
-                print(f"🔍 Trying model: {model}")
-                
-                # Log the exact prompt being sent
-                print("📝 OpenAI Prompt Input:")
-                print("=" * 80)
-                print(prompt)
-                print("=" * 80)
-                
-                response = client.chat.completions.create(
-                    model=model,
-                    messages=[
-                        {
-                            "role": "system", 
-                            "content": "You are an expert frontend developer specializing in creating beautiful, modern, production-ready HTML documents. You excel at implementing professional templates with inline CSS and JavaScript. You ALWAYS output only raw HTML code - no markdown, no code blocks, no explanations. Your HTML is clean, semantic, accessible, and visually stunning."
-                        },
-                        {"role": "user", "content": prompt}
-                    ],
-                    max_tokens=6000,
-                    temperature=0.7
-                )
-                
-                html_content = response.choices[0].message.content.strip()
-                model_used = model
-                
-                # Log the exact response content from OpenAI
-                print(f"📥 OpenAI Response Output from {model}:")
-                print("=" * 80)
-                print(html_content[:1000] + ("..." if len(html_content) > 1000 else ""))  # Show first 1000 chars
-                print("=" * 80)
-                print(f"✅ {model} generated {len(html_content)} characters of HTML!")
-                
-                # Validate that we got substantial content
-                if len(html_content) > 200 and "<!DOCTYPE html>" in html_content:
-                    break
-                else:
-                    print(f"⚠️ {model} returned minimal/invalid content, trying next model...")
-                    
-            except Exception as e:
-                print(f"❌ {model} failed: {e}")
-                continue
+        # Combine system prompt and user prompt into input
+        full_input = f"{system_prompt}\n\n{prompt}"
         
-        if not html_content or len(html_content) < 200:
-            print("❌ All models failed, generating fallback HTML")
+        # Log the exact prompt being sent
+        print("📝 OpenAI Prompt Input:")
+        print("=" * 80)
+        print(full_input[:1000] + ("..." if len(full_input) > 1000 else ""))
+        print("=" * 80)
+        
+        # Call GPT-5.1 using Responses API
+        response = client.responses.create(
+            model="gpt-5.1",
+            input=full_input,
+            reasoning={"effort": "high"},  # High reasoning for complex code generation
+            text={"verbosity": "high"},    # High verbosity for complete HTML
+            max_output_tokens=16000        # Increased for larger HTML files
+        )
+        
+        html_content = response.output_text.strip()
+        model_used = "gpt-5.1"
+        
+        # Log the exact response content from OpenAI
+        print(f"📥 OpenAI Response Output from gpt-5.1:")
+        print("=" * 80)
+        print(html_content[:1000] + ("..." if len(html_content) > 1000 else ""))
+        print("=" * 80)
+        print(f"✅ gpt-5.1 generated {len(html_content)} characters of HTML!")
+        
+        # Validate that we got substantial content
+        if not html_content or len(html_content) < 200 or "<!DOCTYPE html>" not in html_content:
+            print("❌ GPT-5.1 returned invalid content, generating fallback HTML")
             return generate_fallback_html(scraped_data)
         
         # Clean up any markdown formatting if present

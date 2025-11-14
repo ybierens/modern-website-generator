@@ -17,82 +17,152 @@ TEMPLATES = {
         "description": "Professional template for restaurants, cafes, bars, food trucks, and catering services. Features menu displays, location/hours information, hero food imagery, reservation CTAs, and grid-based dish showcases. Optimized for food service businesses with emphasis on visual appeal and call-to-action buttons.",
         "content": """=== PROFESSIONAL RESTAURANT WEBSITE TEMPLATE ===
 
-Generate a complete, professional, standalone HTML file with inline CSS and JavaScript.
+You are building a modern, professional website for a restaurant using Tailwind CSS. Apply your reasoning to create the optimal design for THIS specific restaurant based on its unique content, style, and brand.
 
-CORE LAYOUT STRUCTURE:
+TECHNICAL FOUNDATION:
 
-Header (Sticky):
-- 64px height, white background with backdrop blur, 20px horizontal padding
-- Logo section: 32px logo image + restaurant name (20px bold)
-- Navigation: 14px medium links with 24px spacing
-- CTA buttons: Primary "Order Online" + outline "Reservations"
-- Mobile: Hamburger menu with smooth slide animations
+Required Setup:
+- Include Tailwind CSS Play CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Single self-contained HTML file with inline JavaScript
+- Use Tailwind utility classes for ALL styling
+- Semantic HTML5 structure (header, nav, main, section, footer)
 
-Hero Section (80vh min):
-- Background image with 35% dark overlay for text contrast
-- Centered content: max-width 1024px, 20px padding
-- Main heading: 56-72px responsive (clamp), bold, white
-- Subheading: 20-24px, 90% opacity white, max-width 600px
-- Two CTA buttons with 16px gap
+DESIGN GOALS:
 
-Main Content:
-- Sections: 64px vertical padding, 1200px max-width
-- Grid: 1-col mobile, 2-col tablet, 3-col desktop
-- Headings: 48px sections, 24px subsections
-- Body: 20px text with 1.6 line-height
+Create a website that:
+- Immediately captures the restaurant's atmosphere and personality
+- Makes users want to visit or order (clear CTAs)
+- Showcases food imagery beautifully and prominently
+- Presents information in a scannable, intuitive hierarchy
+- Feels premium and professional appropriate for the establishment
+- Works flawlessly on mobile, tablet, and desktop
 
-Popular Dishes Grid:
-- Light gray background (#f9fafb)
-- Cards: white, 16px radius, 24px padding, subtle shadow
-- Dish images: 192px height, object-fit cover, lazy loading
-- Typography: 18px name (semibold), 14px description, 16px price
-- Hover: 2px vertical lift transform
+CORE SECTIONS TO INCLUDE:
 
-Hours & Contact Cards:
-- Two-column layout with 32px gap
-- Cards: white, 16px radius, 24px padding
-- Hours: Clock icon + structured day/time format
-- Contact: Location icon + address + map integration
+1. Sticky Navigation
+   - Always accessible while scrolling
+   - Logo/name prominently displayed
+   - Key navigation links (menu, hours, contact, reservations)
+   - Call-to-action buttons for ordering/booking
+   - Mobile-friendly hamburger menu
 
-Footer:
-- Centered, 40px vertical padding, light background
-- Contact info: phone, email, address with separators
-- Social links with hover effects and accessibility labels
+2. Hero Section
+   - Powerful first impression using best available image
+   - Clear statement of what makes this restaurant special
+   - Prominent action buttons (reserve, order, view menu)
+   - Should occupy significant viewport height
 
-DESIGN SYSTEM:
+3. About/Story (if content available)
+   - Restaurant's unique selling points
+   - Chef background, philosophy, awards
+   - What makes them different
+
+4. Menu/Dishes Showcase
+   - Highlight signature dishes or popular items
+   - Use food imagery effectively
+   - Show prices clearly if available
+   - Organized by category if applicable
+   - Make items look appetizing and desirable
+
+5. Experience Section
+   - Ambiance, dining room, bar, private dining
+   - Special offerings (brunch, happy hour, events)
+   - Any unique experiences or features
+
+6. Location & Hours
+   - Clear business hours in easy-to-read format
+   - Address with map consideration
+   - Contact information (phone, email)
+   - Parking or transit information if available
+
+7. Footer
+   - Contact details, social links
+   - Important links
+   - Copyright and credits
+
+DESIGN PRINCIPLES:
+
+Visual Hierarchy:
+- Use size, color, spacing, and contrast to guide attention
+- Most important actions should be most prominent
+- Create clear visual breaks between sections
+- Use whitespace generously for breathing room
 
 Typography:
-- Font: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif
-- Scale: 56-72px hero, 48px sections, 24px subsections, 20px body, 16px captions, 14px small
+- Choose appropriate scale for the brand (upscale = larger, cleaner / casual = varied)
+- Ensure excellent readability
+- Create rhythm with consistent spacing
+- Use font weights to establish hierarchy
 
-Colors:
-- Primary: Customizable brand color (default: #dc2626)
-- Text: #111827 primary, gray-600 secondary, white on dark
-- Backgrounds: White, light gray (#f9fafb) for section separation
-- Overlays: rgba(0,0,0,0.35) hero backgrounds
+Color & Branding:
+- Choose brand colors appropriate to the restaurant's style
+- Consider cuisine type (e.g., red for Chinese, green for healthy, black for upscale)
+- Maintain strong contrast for readability
+- Use color strategically to draw attention
 
-Interactive Elements:
-- Buttons: 12-24px padding, 8px radius, 600 weight, smooth transitions
-- Primary: Brand color bg + white text + hover darken
-- Secondary: Transparent bg + brand border/text
-- Hover: 2px lift transform + enhanced shadow
-- Links: Brand color with underline on hover
+Imagery:
+- Make food photos hero elements
+- Use overlays on hero images for text legibility
+- Ensure images are properly sized and optimized
+- Consider aspect ratios that showcase food well
 
-Responsive:
-- Breakpoints: 480px, 768px, 1024px
-- 8px spacing grid system
-- Flexible typography with clamp()
-- Mobile hamburger menu
-- Lazy loading images with srcset
-- 44px minimum touch targets
+Interaction & Animation:
+- Smooth hover states on all interactive elements
+- Subtle transitions that feel polished
+- Cards that lift or transform on hover
+- Mobile menu that slides smoothly
+
+Responsive Design:
+- Mobile-first approach
+- Touch-friendly targets on mobile (minimum 44px)
+- Adapt layouts intelligently across breakpoints
+- Optimize image sizes for different screens
+
+CONTENT REQUIREMENTS:
+
+Content Handling:
+- Use ALL provided scraped content strategically
+- Preserve key messaging and marketing copy
+- Highlight unique features and specialties
+- Show business information accurately (hours, location, contact)
+- Use all provided images contextually where they add value
+- Create compelling section headings and subheadings
+
+Business Information:
+- Display exactly as scraped: phone, email, address, hours
+- Keep menu items, prices, descriptions accurate
+- Maintain brand voice and terminology
+- Preserve any awards, certifications, special mentions
+
+Quality Standards:
+- Professional, polished appearance
+- Consistent design language throughout
+- Appropriate for the restaurant's price point and style
+- Modern without being trendy
+- Focus on food and experience
+
+ACCESSIBILITY & SEO:
 
 Accessibility:
-- Semantic HTML5 (header, nav, main, section, footer)
 - Proper heading hierarchy (h1 → h2 → h3)
-- Alt attributes for all images
-- ARIA labels for interactive elements
-- WCAG AA color contrast (4.5:1 minimum)
+- Descriptive alt text for all images
+- ARIA labels where needed
 - Keyboard navigation support
+- Focus indicators on interactive elements
+- Sufficient color contrast ratios
+
+SEO Optimization:
+- Descriptive title tag with restaurant name and location
+- Compelling meta description (150-160 chars)
+- Semantic HTML structure
+- Open Graph tags for social sharing
+- Schema.org structured data for local business
+
+Performance:
+- Lazy load images below the fold
+- Optimize for fast initial render
+- Minimal JavaScript complexity
+- Efficient Tailwind usage
 
 CONTENT REQUIREMENTS:
 
@@ -125,44 +195,50 @@ Enhancement:
 
 TECHNICAL REQUIREMENTS:
 
-HTML:
+HTML Structure:
 - Complete standalone document with <!DOCTYPE html>
-- Inline CSS and JavaScript (no external files)
-- Semantic HTML5 elements throughout
-- Meaningful class names (e.g., "hero-section", "menu-grid")
+- Include Tailwind CSS Play CDN: <script src="https://cdn.tailwindcss.com"></script> in head
+- Inline JavaScript only (no external JS files beyond Tailwind CDN)
+- Semantic HTML5 elements throughout (header, nav, main, section, article, footer)
+- Meaningful, descriptive class names using Tailwind utilities
 
-CSS:
-- Modern features: Flexbox, Grid, custom properties
-- Mobile-first with media queries
-- Smooth transitions (0.3s ease)
-- Efficient selectors, organized structure
+Styling with Tailwind:
+- Use Tailwind utility classes for ALL styling (layout, colors, typography, spacing, etc.)
+- Only write custom CSS in a <style> tag if absolutely necessary for unique effects Tailwind cannot achieve
+- Mobile-first responsive design using Tailwind breakpoints (md:, lg:, xl:)
+- Use Tailwind transitions and animations (transition-all, duration-300, hover:, etc.)
+- Leverage Tailwind's color palette (red-600, gray-900, etc.) for consistency
 
-JavaScript:
-- Mobile menu toggle
-- Smooth scroll behavior
-- Image lazy loading
-- Vanilla JS only (no dependencies)
+JavaScript Requirements:
+- Mobile hamburger menu toggle functionality
+- Smooth scroll behavior for anchor links
+- Image lazy loading with loading="lazy" attribute
+- Vanilla JavaScript only (no external dependencies)
+- Keep JavaScript minimal and clean
 
-Performance:
-- Lazy load images below fold
-- Minimize CSS/JS complexity
+Performance Optimization:
+- Use loading="lazy" for images below the fold
+- Minimize custom CSS - rely on Tailwind utilities
 - Optimize for Core Web Vitals
+- Keep JavaScript lightweight and efficient
 
-SEO:
-- Title tag: restaurant name + location
-- Meta description (160 chars max)
-- Open Graph tags
-- JSON-LD structured data for local business
+SEO & Meta Tags:
+- Title tag: restaurant name + location + relevant keywords
+- Meta description (150-160 chars, compelling and keyword-rich)
+- Meta viewport tag for responsive design
+- Open Graph tags (og:title, og:description, og:image, og:url)
+- JSON-LD structured data for LocalBusiness/Restaurant schema
 
 Quality Standards:
-- Clean, indented code with comments
-- 8px grid system spacing
-- Hover effects on interactive elements
-- Visual hierarchy with size/color/position
-- Ample whitespace for readability
-- Rounded corners (8-16px) for modern aesthetics
+- Clean, well-indented HTML with appropriate comments
+- Consistent use of Tailwind's spacing scale (p-4, p-6, gap-4, etc.)
+- Hover effects on all interactive elements (buttons, links, cards)
+- Clear visual hierarchy using Tailwind typography and spacing
+- Generous whitespace using Tailwind spacing utilities
+- Modern aesthetics with rounded corners (rounded-lg, rounded-xl, rounded-2xl)
+- Smooth transitions on all interactive elements (transition-all, duration-300)
 
-OUTPUT: Complete, functional, professional website ready for immediate use.
+OUTPUT: Complete, functional, professional website ready for immediate use. The generated HTML must be a single, self-contained file that works perfectly when opened directly in a browser or loaded in an iframe.
 
 ===
 """
