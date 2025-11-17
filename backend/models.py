@@ -56,8 +56,20 @@ class WebsiteRecord(BaseModel):
     identifier: str
     original_url: str
     original_html: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+
+class WebsiteVersionRecord(BaseModel):
+    """Database record model for website versions."""
+    id: UUID
+    website_id: UUID
+    version_number: int
+    generation_instructions: str
     generated_html: Optional[str] = None
-    template_name: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

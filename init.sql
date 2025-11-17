@@ -10,8 +10,6 @@ CREATE TABLE IF NOT EXISTS websites (
     identifier VARCHAR(100) NOT NULL UNIQUE,
     original_url TEXT NOT NULL,
     original_html TEXT,
-    generated_html TEXT,
-    template_name VARCHAR(100),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -20,6 +18,23 @@ CREATE TABLE IF NOT EXISTS websites (
 CREATE INDEX IF NOT EXISTS idx_websites_identifier ON websites(identifier);
 CREATE INDEX IF NOT EXISTS idx_websites_original_url ON websites(original_url);
 CREATE INDEX IF NOT EXISTS idx_websites_created_at ON websites(created_at DESC);
+
+-- Create website_versions table to store multiple generated versions
+CREATE TABLE IF NOT EXISTS website_versions (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    website_id UUID NOT NULL REFERENCES websites(id) ON DELETE CASCADE,
+    version_number INTEGER NOT NULL CHECK (version_number IN (1, 2, 3)),
+    generation_instructions TEXT NOT NULL,
+    generated_html TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(website_id, version_number)
+);
+
+-- Create indexes for website_versions
+CREATE INDEX IF NOT EXISTS idx_website_versions_website_id ON website_versions(website_id);
+CREATE INDEX IF NOT EXISTS idx_website_versions_version_number ON website_versions(version_number);
+CREATE INDEX IF NOT EXISTS idx_website_versions_created_at ON website_versions(created_at DESC);
 
 -- Create jobs table for async processing
 CREATE TABLE IF NOT EXISTS jobs (
@@ -60,6 +75,11 @@ $$ language 'plpgsql';
 -- Create triggers for automatic timestamp updates
 CREATE TRIGGER update_websites_updated_at 
     BEFORE UPDATE ON websites 
+    FOR EACH ROW 
+    EXECUTE FUNCTION update_updated_at_column();
+
+CREATE TRIGGER update_website_versions_updated_at 
+    BEFORE UPDATE ON website_versions 
     FOR EACH ROW 
     EXECUTE FUNCTION update_updated_at_column();
 

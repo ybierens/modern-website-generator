@@ -24,7 +24,8 @@ from .models import (
 )
 from .utils import (
     extract_identifier, scrape_website, generate_optimized_html, 
-    ensure_unique_identifier, process_images, select_template_for_website
+    ensure_unique_identifier, process_images, generate_version_instructions,
+    generate_three_versions_parallel
 )
 
 # Create FastAPI application
@@ -130,31 +131,47 @@ async def process_website_async(job_id: UUID, url: str):
         print(f"🖼️ Processing images...")
         scraped_data = await process_images(scraped_data, website_id)
         
-        # Step 5: Select appropriate template using AI router
-        print(f"🎯 Selecting appropriate template...")
-        template_id = select_template_for_website(scraped_data)
+        # Step 5: Generate creative instructions using GPT-5 thinking mode
+        print(f"🎨 Generating 3 creative directions with GPT-5 thinking mode...")
+        instructions = generate_version_instructions(scraped_data)
         
-        # Store template selection in database
-        await db.update_website_template(website_id, template_id)
-        print(f"💾 Stored template selection: {template_id}")
+        # Step 6: Generate 3 versions in parallel
+        print(f"🚀 Generating 3 website versions in parallel...")
+        version_htmls = await generate_three_versions_parallel(scraped_data, instructions)
         
-        # Step 6: Generate optimized HTML with selected template
-        print(f"🤖 Generating HTML with AI using '{template_id}' template...")
-        generated_html = generate_optimized_html(scraped_data, template_id)
+        # Step 7: Store all successful versions in database
+        versions_created = 0
+        for version_num, version_key in enumerate([('version_1', 1), ('version_2', 2), ('version_3', 3)], start=1):
+            key, num = version_key
+            html = version_htmls.get(key)
+            instruction = instructions.get(key, '')
+            
+            if html:
+                try:
+                    await db.create_website_version(
+                        website_id=website_id,
+                        version_number=num,
+                        generation_instructions=instruction,
+                        generated_html=html
+                    )
+                    versions_created += 1
+                    print(f"✅ Stored version {num} ({len(html)} chars)")
+                except Exception as e:
+                    print(f"⚠️ Failed to store version {num}: {e}")
         
-        # Step 7: Update website with generated HTML
-        await db.update_website_html(website_id, generated_html)
-        
-        # Step 8: Mark job as completed
-        await db.update_job_status(job_id, "completed", website_id=website_id)
-        active_jobs[str(job_id)] = {
-            "status": "completed", 
-            "error": None,
-            "website_id": str(website_id),
-            "identifier": identifier
-        }
-        
-        print(f"✅ Job {job_id} completed successfully")
+        # Step 8: Mark job as completed if at least 1 version succeeded
+        if versions_created > 0:
+            await db.update_job_status(job_id, "completed", website_id=website_id)
+            active_jobs[str(job_id)] = {
+                "status": "completed", 
+                "error": None,
+                "website_id": str(website_id),
+                "identifier": identifier,
+                "versions_generated": versions_created
+            }
+            print(f"✅ Job {job_id} completed successfully with {versions_created}/3 versions")
+        else:
+            raise Exception("All 3 versions failed to generate")
         
     except Exception as e:
         error_msg = str(e)
@@ -259,78 +276,119 @@ async def get_job_status(job_id: UUID):
 @app.get("/websites")
 async def get_recent_websites():
     """
-    Get the 10 most recent generated websites.
+    Get the 10 most recent generated websites with version information.
     
     Returns:
-        List of recent websites with basic information
+        List of recent websites with basic information and available versions
     """
     try:
         websites = await db.get_recent_websites(10)
-        return [
-            {
+        result = []
+        
+        for website in websites:
+            # Get available versions for this website
+            available_versions = await db.get_available_versions(website.id)
+            
+            result.append({
                 "id": str(website.id),
                 "identifier": website.identifier,
                 "original_url": website.original_url,
                 "created_at": website.created_at.isoformat(),
-                "has_generated_html": website.generated_html is not None
-            }
-            for website in websites
-        ]
+                "has_generated_html": len(available_versions) > 0,
+                "available_versions": available_versions,
+                "default_version": 1 if 1 in available_versions else (available_versions[0] if available_versions else None)
+            })
+        
+        return result
     except Exception as e:
         print(f"❌ Failed to get recent websites: {e}")
         raise HTTPException(status_code=500, detail=f"Failed to get recent websites: {str(e)}")
 
 
+@app.get("/raw/{identifier}/{version_number}", response_class=HTMLResponse)
 @app.get("/raw/{identifier}", response_class=HTMLResponse)
-async def get_raw_website(identifier: str):
+async def get_raw_website(identifier: str, version_number: int = 1):
     """
     Serve the raw generated website HTML for iframe embedding.
     
     Args:
         identifier: The website identifier
+        version_number: The version number (1, 2, or 3), defaults to 1
         
     Returns:
         Raw HTML response without security headers
     """
     try:
-        website = await db.get_website(identifier)
-        if not website:
-            return HTMLResponse(
-                content="""
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Website Not Found</title>
-                    <style>
-                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                        .error { color: #e74c3c; }
-                    </style>
-                </head>
-                <body>
-                    <h1 class="error">Website Not Found</h1>
-                    <p>The requested website could not be found.</p>
-                    <p>Please check the URL and try again.</p>
-                </body>
-                </html>
-                """,
-                status_code=404
-            )
+        # Get the specific version
+        version = await db.get_website_version(identifier, version_number)
         
-        if not website.generated_html:
+        if not version:
+            # Try to get the website to see if it exists
+            website = await db.get_website(identifier)
+            if not website:
+                return HTMLResponse(
+                    content="""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Website Not Found</title>
+                        <style>
+                            body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
+                            .error { color: #e74c3c; }
+                        </style>
+                    </head>
+                    <body>
+                        <h1 class="error">Website Not Found</h1>
+                        <p>The requested website could not be found.</p>
+                        <p>Please check the URL and try again.</p>
+                    </body>
+                    </html>
+                    """,
+                    status_code=404
+                )
+            else:
+                # Website exists but version doesn't - try version 1 as fallback
+                if version_number != 1:
+                    version = await db.get_website_version(identifier, 1)
+                    if version and version.generated_html:
+                        return HTMLResponse(content=version.generated_html)
+                
+                return HTMLResponse(
+                    content=f"""
+                    <!DOCTYPE html>
+                    <html>
+                    <head>
+                        <title>Version Not Found</title>
+                        <style>
+                            body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                            .error {{ color: #e74c3c; }}
+                        </style>
+                    </head>
+                    <body>
+                        <h1 class="error">Version {version_number} Not Found</h1>
+                        <p>This version is still being processed or failed to generate.</p>
+                        <p>Please try another version or try again later.</p>
+                    </body>
+                    </html>
+                    """,
+                    status_code=404
+                )
+        
+        if not version.generated_html:
             return HTMLResponse(
-                content="""
+                content=f"""
                 <!DOCTYPE html>
                 <html>
                 <head>
                     <title>Website Processing</title>
                     <style>
-                        body { font-family: Arial, sans-serif; text-align: center; padding: 50px; }
-                        .processing { color: #3498db; }
+                        body {{ font-family: Arial, sans-serif; text-align: center; padding: 50px; }}
+                        .processing {{ color: #3498db; }}
                     </style>
                 </head>
                 <body>
-                    <h1 class="processing">Website Processing</h1>
-                    <p>This website is still being processed.</p>
+                    <h1 class="processing">Version {version_number} Processing</h1>
+                    <p>This version is still being generated.</p>
                     <p>Please try again in a few moments.</p>
                 </body>
                 </html>
@@ -339,10 +397,10 @@ async def get_raw_website(identifier: str):
             )
         
         # Serve raw HTML without restrictive security headers for iframe embedding
-        return HTMLResponse(content=website.generated_html)
+        return HTMLResponse(content=version.generated_html)
         
     except Exception as e:
-        print(f"❌ Failed to serve raw website {identifier}: {e}")
+        print(f"❌ Failed to serve raw website {identifier} version {version_number}: {e}")
         return HTMLResponse(
             content=f"""
             <!DOCTYPE html>
@@ -401,6 +459,10 @@ async def get_website(identifier: str):
                 status_code=404
             )
         
+        # Get available versions
+        available_versions = await db.get_available_versions(website.id)
+        default_version = 1 if 1 in available_versions else (available_versions[0] if available_versions else 1)
+        
         # Serve iframe viewer page
         return HTMLResponse(
             content=f"""
@@ -452,6 +514,52 @@ async def get_website(identifier: str):
                         white-space: nowrap;
                     }}
                     
+                    .version-control-wrapper {{
+                        background: #f8f9fa;
+                        padding: 15px 20px;
+                        border-bottom: 1px solid #dee2e6;
+                        display: flex;
+                        justify-content: center;
+                        align-items: center;
+                    }}
+                    
+                    .version-control {{
+                        display: flex;
+                        gap: 0;
+                        background: white;
+                        border-radius: 8px;
+                        padding: 4px;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    }}
+                    
+                    .version-btn {{
+                        padding: 10px 24px;
+                        border: none;
+                        background: transparent;
+                        color: #495057;
+                        font-size: 0.95rem;
+                        font-weight: 500;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        border-radius: 6px;
+                    }}
+                    
+                    .version-btn:hover:not(:disabled) {{
+                        background: #f8f9fa;
+                        color: #667eea;
+                    }}
+                    
+                    .version-btn.active {{
+                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                        color: white;
+                        box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+                    }}
+                    
+                    .version-btn:disabled {{
+                        opacity: 0.4;
+                        cursor: not-allowed;
+                    }}
+                    
                     .iframe-container {{
                         flex: 1;
                         padding: 0;
@@ -497,9 +605,24 @@ async def get_website(identifier: str):
                     <div class="url">{website.original_url}</div>
                 </div>
                 
+                <div class="version-control-wrapper">
+                    <div class="version-control">
+                        <button class="version-btn{'  active' if default_version == 1 else ''}" data-version="1" {'disabled' if 1 not in available_versions else ''}>
+                            Version 1
+                        </button>
+                        <button class="version-btn{' active' if default_version == 2 else ''}" data-version="2" {'disabled' if 2 not in available_versions else ''}>
+                            Version 2
+                        </button>
+                        <button class="version-btn{' active' if default_version == 3 else ''}" data-version="3" {'disabled' if 3 not in available_versions else ''}>
+                            Version 3
+                        </button>
+                    </div>
+                </div>
+                
                 <div class="iframe-container">
                     <iframe 
-                        src="/raw/{identifier}"
+                        id="website-frame"
+                        src="/raw/{identifier}/{default_version}"
                         class="website-frame"
                         sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-top-navigation-by-user-activation"
                         loading="lazy"
@@ -510,12 +633,63 @@ async def get_website(identifier: str):
                 <div class="security-notice">
                     🔒 Sandboxed Content
                 </div>
+                
+                <script>
+                    // Handle version switching
+                    const versionButtons = document.querySelectorAll('.version-btn');
+                    const iframe = document.getElementById('website-frame');
+                    const identifier = '{identifier}';
+                    
+                    // Load version from URL hash on page load
+                    function loadVersionFromHash() {{
+                        const hash = window.location.hash.substring(1); // Remove #
+                        if (hash.startsWith('v')) {{
+                            const versionNum = parseInt(hash.substring(1));
+                            if (versionNum >= 1 && versionNum <= 3) {{
+                                switchToVersion(versionNum);
+                            }}
+                        }}
+                    }}
+                    
+                    function switchToVersion(versionNum) {{
+                        // Update iframe src
+                        iframe.src = `/raw/${{identifier}}/${{versionNum}}`;
+                        
+                        // Update button states
+                        versionButtons.forEach(btn => {{
+                            const btnVersion = parseInt(btn.dataset.version);
+                            if (btnVersion === versionNum) {{
+                                btn.classList.add('active');
+                            }} else {{
+                                btn.classList.remove('active');
+                            }}
+                        }});
+                        
+                        // Update URL hash without reloading
+                        window.location.hash = `v${{versionNum}}`;
+                    }}
+                    
+                    // Add click handlers to version buttons
+                    versionButtons.forEach(button => {{
+                        button.addEventListener('click', () => {{
+                            if (button.disabled) return;
+                            const version = parseInt(button.dataset.version);
+                            switchToVersion(version);
+                        }});
+                    }});
+                    
+                    // Load version from hash on initial load
+                    window.addEventListener('DOMContentLoaded', loadVersionFromHash);
+                    
+                    // Handle hash changes (browser back/forward)
+                    window.addEventListener('hashchange', loadVersionFromHash);
+                </script>
             </body>
             </html>
             """,
             headers={
                 "X-Frame-Options": "DENY",
-                "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; frame-src 'self';",
+                "Content-Security-Policy": "default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'; frame-src 'self';",
                 "X-Content-Type-Options": "nosniff"
             }
         )
@@ -882,20 +1056,38 @@ async def serve_index():
             justify-content: space-between;
             align-items: center;
             transition: background-color 0.3s ease;
+            gap: 20px;
+        }
+        
+        /* Collapsed header is fully clickable */
+        .website-item:not(.expanded) .website-header {
+            cursor: pointer;
+        }
+        
+        /* Expanded header is not clickable (buttons handle their own clicks) */
+        .website-item.expanded .website-header {
+            cursor: default;
         }
         
         .website-header-left {
             display: flex;
             align-items: center;
             gap: 15px;
+            flex: 0 0 auto;
+        }
+        
+        .website-header-center {
+            display: flex;
+            align-items: center;
+            justify-content: center;
             flex: 1;
-            cursor: pointer;
         }
         
         .website-header-right {
             display: flex;
             align-items: center;
             gap: 10px;
+            flex: 0 0 auto;
         }
         
         .expand-arrow {
@@ -1012,6 +1204,7 @@ async def serve_index():
             position: absolute;
             top: 0;
             left: 0;
+            transition: none; /* No fade when switching versions */
         }
         
         /* Calculate scale based on container width */
@@ -1038,6 +1231,58 @@ async def serve_index():
             display: none;
         }
         
+        /* Version control styles for list view */
+        .version-control-list {
+            display: flex;
+            justify-content: center;
+            gap: 0;
+        }
+        
+        /* Version control in header (no extra padding/border) */
+        .website-header-center .version-control-list {
+            margin: 0;
+            padding: 0;
+            border: none;
+        }
+        
+        .version-control-list .version-control {
+            display: flex;
+            gap: 0;
+            background: white;
+            border-radius: 6px;
+            padding: 3px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            border: 1px solid #e1e5e9;
+        }
+        
+        .version-control-list .version-btn {
+            padding: 8px 15px;
+            border: none;
+            background: transparent;
+            color: #495057;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border-radius: 6px;
+        }
+        
+        .version-control-list .version-btn:hover:not(:disabled) {
+            background: #f8f9fa;
+            color: #667eea;
+        }
+        
+        .version-control-list .version-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+        
+        .version-control-list .version-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+        
         /* Mobile responsive scaling for previews */
         @media (max-width: 768px) {
             .website-preview {
@@ -1048,6 +1293,18 @@ async def serve_index():
                 width: 768px;
                 height: 1024px;
                 transform: scale(calc((100vw - 80px) / 768px));
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .website-header {
+                flex-wrap: wrap;
+            }
+            
+            .website-header-center {
+                order: 3;
+                flex-basis: 100%;
+                margin-top: 10px;
             }
         }
         
@@ -1066,6 +1323,11 @@ async def serve_index():
             
             .website-item.expanded .website-content {
                 padding: 15px;
+            }
+            
+            .version-control-list .version-btn {
+                padding: 7px 12px;
+                font-size: 0.85rem;
             }
             
             .website-preview {
@@ -1176,27 +1438,61 @@ async def serve_index():
             const item = document.createElement('div');
             item.className = `website-item${isExpanded ? ' expanded' : ''}`;
             item.dataset.identifier = website.identifier;
+            item.dataset.activeVersion = website.default_version || 1; // Store active version
+            
+            const availableVersions = website.available_versions || [];
+            const defaultVersion = website.default_version || 1;
+            
+            // Generate version control buttons HTML for header
+            const versionControlHTML = website.has_generated_html ? `
+                <div class="version-control-list">
+                    <div class="version-control">
+                        <button class="version-btn${defaultVersion === 1 ? ' active' : ''}" 
+                                data-version="1" 
+                                data-identifier="${website.identifier}"
+                                ${availableVersions.includes(1) ? '' : 'disabled'}
+                                onclick="switchVersion('${website.identifier}', 1, event)">
+                            Version 1
+                        </button>
+                        <button class="version-btn${defaultVersion === 2 ? ' active' : ''}" 
+                                data-version="2" 
+                                data-identifier="${website.identifier}"
+                                ${availableVersions.includes(2) ? '' : 'disabled'}
+                                onclick="switchVersion('${website.identifier}', 2, event)">
+                            Version 2
+                        </button>
+                        <button class="version-btn${defaultVersion === 3 ? ' active' : ''}" 
+                                data-version="3" 
+                                data-identifier="${website.identifier}"
+                                ${availableVersions.includes(3) ? '' : 'disabled'}
+                                onclick="switchVersion('${website.identifier}', 3, event)">
+                            Version 3
+                        </button>
+                    </div>
+                </div>
+            ` : '';
             
             item.innerHTML = `
-                <div class="website-header">
-                    <div class="website-header-left" onclick="toggleWebsiteItem('${website.identifier}')">
+                <div class="website-header" onclick="handleHeaderClick('${website.identifier}', event)">
+                    <div class="website-header-left">
                         <span class="website-name">${website.identifier}</span>
                     </div>
+                    <div class="website-header-center website-btn-expanded-only">
+                        ${versionControlHTML}
+                    </div>
                     <div class="website-header-right">
-                        <a href="/website/${website.identifier}" target="_blank" class="view-website-btn primary website-btn-expanded-only" onclick="event.stopPropagation()">
-                            ✨ View New Website
+                        <a href="${website.original_url}" target="_blank" class="view-website-btn secondary website-btn-expanded-only" onclick="event.stopPropagation()">
+                            View Original
                         </a>
-                        <a href="${website.original_url}" target="_blank" class="view-website-btn secondary website-btn-expanded-only" onclick="event.stopPropagation()" style="margin-right: 10px;">
-                            View Old Website
-                        </a>
-                        <span class="expand-arrow" onclick="toggleWebsiteItem('${website.identifier}')">▼</span>
+                        <span class="expand-arrow" onclick="toggleWebsiteItem('${website.identifier}'); event.stopPropagation();">▼</span>
                     </div>
                 </div>
                 <div class="website-content">
                     ${website.has_generated_html ? `
-                        <div class="website-preview" onclick="openWebsite('${website.identifier}')" style="cursor: pointer;">
+                        <div class="website-preview" onclick="openWebsiteWithVersion('${website.identifier}')" style="cursor: pointer;">
                             <iframe 
-                                src="/raw/${website.identifier}"
+                                id="iframe-${website.identifier}"
+                                src="/raw/${website.identifier}/${defaultVersion}"
                                 sandbox="allow-scripts allow-same-origin allow-forms"
                                 loading="lazy"
                                 title="Website Preview for ${website.identifier}"
@@ -1215,12 +1511,62 @@ async def serve_index():
             
             return item;
         }
-
-        // Open website in new tab
-        function openWebsite(identifier) {
-            window.open(`/website/${identifier}`, '_blank');
+        
+        // Switch version in list preview
+        function switchVersion(identifier, version, event) {
+            event.stopPropagation(); // Prevent triggering collapse/expand
+            
+            const iframe = document.getElementById(`iframe-${identifier}`);
+            if (iframe) {
+                // Switch immediately without fade
+                iframe.style.opacity = '1';
+                iframe.src = `/raw/${identifier}/${version}`;
+            }
+            
+            // Update button states and store active version
+            const item = document.querySelector(`[data-identifier="${identifier}"]`);
+            if (item) {
+                // Store the active version in the data attribute
+                item.dataset.activeVersion = version;
+                
+                const buttons = item.querySelectorAll('.version-btn');
+                buttons.forEach(btn => {
+                    const btnVersion = parseInt(btn.dataset.version);
+                    if (btnVersion === version) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+            }
         }
 
+        // Open website in new tab with the currently active version
+        function openWebsiteWithVersion(identifier) {
+            const item = document.querySelector(`[data-identifier="${identifier}"]`);
+            const activeVersion = item ? item.dataset.activeVersion : 1;
+            window.open(`/website/${identifier}#v${activeVersion}`, '_blank');
+        }
+
+        // Handle header click - entire header is clickable when collapsed
+        function handleHeaderClick(identifier, event) {
+            const clickedItem = document.querySelector(`[data-identifier="${identifier}"]`);
+            if (!clickedItem) return;
+            
+            const isExpanded = clickedItem.classList.contains('expanded');
+            
+            // If expanded, only toggle when clicking the arrow area, not buttons/links
+            if (isExpanded) {
+                // Check if click was on a button or link (which have stopPropagation)
+                // If we get here and it's expanded, it means they clicked non-interactive area
+                // Don't do anything - let buttons handle their own clicks
+                return;
+            }
+            
+            // If collapsed, entire header is clickable - expand it
+            toggleWebsiteItem(identifier);
+        }
+        
         // Toggle website item expand/collapse with accordion behavior
         function toggleWebsiteItem(identifier) {
             const clickedItem = document.querySelector(`[data-identifier="${identifier}"]`);

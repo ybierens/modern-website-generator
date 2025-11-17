@@ -14,7 +14,7 @@ from uuid import UUID, uuid4
 import asyncpg
 from asyncpg import Pool
 
-from .models import WebsiteRecord, JobRecord, JobStatus
+from .models import WebsiteRecord, WebsiteVersionRecord, JobRecord, JobStatus
 
 
 class Database:
@@ -75,7 +75,7 @@ class Database:
         async with self.pool.acquire() as connection:
             row = await connection.fetchrow(
                 """
-                SELECT id, identifier, original_url, original_html, generated_html, template_name, created_at, updated_at
+                SELECT id, identifier, original_url, original_html, created_at, updated_at
                 FROM websites 
                 WHERE identifier = $1
                 """,
@@ -90,7 +90,7 @@ class Database:
         async with self.pool.acquire() as connection:
             row = await connection.fetchrow(
                 """
-                SELECT id, identifier, original_url, original_html, generated_html, template_name, created_at, updated_at
+                SELECT id, identifier, original_url, original_html, created_at, updated_at
                 FROM websites 
                 WHERE id = $1
                 """,
@@ -99,19 +99,6 @@ class Database:
             if row:
                 return WebsiteRecord(**dict(row))
             return None
-    
-    async def update_website_html(self, website_id: UUID, generated_html: str) -> bool:
-        """Update the generated HTML for a website."""
-        async with self.pool.acquire() as connection:
-            result = await connection.execute(
-                """
-                UPDATE websites 
-                SET generated_html = $1, updated_at = NOW()
-                WHERE id = $2
-                """,
-                generated_html, website_id
-            )
-            return result == "UPDATE 1"
     
     async def website_exists(self, identifier: str) -> bool:
         """Check if website with identifier already exists."""
@@ -178,7 +165,7 @@ class Database:
         async with self.pool.acquire() as connection:
             rows = await connection.fetch(
                 """
-                SELECT id, identifier, original_url, original_html, generated_html, template_name, created_at, updated_at
+                SELECT id, identifier, original_url, original_html, created_at, updated_at
                 FROM websites 
                 ORDER BY created_at DESC 
                 LIMIT $1
@@ -223,18 +210,68 @@ class Database:
             )
             return [dict(row) for row in rows]
     
-    async def update_website_template(self, website_id: UUID, template_name: str) -> bool:
-        """Update the template name for a website."""
+    async def create_website_version(
+        self, 
+        website_id: UUID, 
+        version_number: int, 
+        generation_instructions: str, 
+        generated_html: str = None
+    ) -> UUID:
+        """Create a new website version record."""
         async with self.pool.acquire() as connection:
-            result = await connection.execute(
+            version_id = uuid4()
+            await connection.execute(
                 """
-                UPDATE websites 
-                SET template_name = $1, updated_at = NOW()
-                WHERE id = $2
+                INSERT INTO website_versions (id, website_id, version_number, generation_instructions, generated_html, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, NOW(), NOW())
                 """,
-                template_name, website_id
+                version_id, website_id, version_number, generation_instructions, generated_html
             )
-            return result == "UPDATE 1"
+            return version_id
+    
+    async def get_website_versions(self, website_id: UUID) -> List[WebsiteVersionRecord]:
+        """Get all versions for a website."""
+        async with self.pool.acquire() as connection:
+            rows = await connection.fetch(
+                """
+                SELECT id, website_id, version_number, generation_instructions, generated_html, created_at, updated_at
+                FROM website_versions 
+                WHERE website_id = $1
+                ORDER BY version_number
+                """,
+                website_id
+            )
+            return [WebsiteVersionRecord(**dict(row)) for row in rows]
+    
+    async def get_website_version(self, identifier: str, version_number: int) -> Optional[WebsiteVersionRecord]:
+        """Get a specific version of a website by identifier and version number."""
+        async with self.pool.acquire() as connection:
+            row = await connection.fetchrow(
+                """
+                SELECT wv.id, wv.website_id, wv.version_number, wv.generation_instructions, wv.generated_html, wv.created_at, wv.updated_at
+                FROM website_versions wv
+                JOIN websites w ON wv.website_id = w.id
+                WHERE w.identifier = $1 AND wv.version_number = $2
+                """,
+                identifier, version_number
+            )
+            if row:
+                return WebsiteVersionRecord(**dict(row))
+            return None
+    
+    async def get_available_versions(self, website_id: UUID) -> List[int]:
+        """Get list of available version numbers for a website."""
+        async with self.pool.acquire() as connection:
+            rows = await connection.fetch(
+                """
+                SELECT version_number 
+                FROM website_versions 
+                WHERE website_id = $1 AND generated_html IS NOT NULL
+                ORDER BY version_number
+                """,
+                website_id
+            )
+            return [row['version_number'] for row in rows]
 
 
 # Global database instance

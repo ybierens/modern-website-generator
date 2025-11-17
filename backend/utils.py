@@ -8,7 +8,7 @@ web scraping, and GPT-based HTML generation.
 import re
 import hashlib
 from urllib.parse import urlparse, urljoin
-from typing import Dict, Any, Tuple, List
+from typing import Dict, Any, Tuple, List, Optional
 import requests
 from bs4 import BeautifulSoup
 from openai import OpenAI
@@ -346,20 +346,18 @@ def test_url_accessibility(url: str) -> bool:
         return False
 
 
-def select_template_for_website(scraped_data: Dict[str, Any]) -> str:
+def generate_version_instructions(scraped_data: Dict[str, Any]) -> Dict[str, str]:
     """
-    Use LLM to analyze scraped website and select the best template.
+    Use GPT-5 thinking mode to generate 3 different creative directions for website generation.
     
     Args:
         scraped_data: Dictionary containing scraped website data
         
     Returns:
-        Template ID identifier (e.g., 'restaurant')
+        Dictionary with version_1, version_2, version_3 instruction strings
     """
-    from .website_generator_templates import get_template_metadata, get_template_ids
-    
     try:
-        print("🤔 Analyzing website to select best template...")
+        print("🤔 Generating 3 creative directions with GPT-5 thinking mode...")
         
         # Setup OpenAI client
         api_key = os.getenv('OPENAI_API_KEY')
@@ -368,66 +366,154 @@ def select_template_for_website(scraped_data: Dict[str, Any]) -> str:
         
         client = OpenAI(api_key=api_key)
         
-        # Get template metadata for selection
-        template_metadata = get_template_metadata()
-        available_ids = get_template_ids()
+        # Prepare image information
+        image_info = ""
+        if scraped_data.get('processed_images'):
+            image_count = len(scraped_data['processed_images'])
+            image_info = f"\n{image_count} images available for use in designs."
         
-        # Build template options for the prompt
-        template_options = []
-        for template_id, metadata in template_metadata.items():
-            template_options.append(
-                f"- {template_id}: {metadata['name']}\n"
-                f"  {metadata['description']}"
-            )
-        
-        prompt = f"""Analyze this website and determine which template type would be most appropriate.
+        # Build prompt for instruction generation
+        prompt = f"""You are an expert web designer tasked with creating 3 different creative directions for redesigning a website.
 
-WEBSITE DATA:
+ORIGINAL WEBSITE DATA:
 Title: {scraped_data.get('title', 'N/A')}
 URL: {scraped_data.get('url', 'N/A')}
 Meta Description: {scraped_data.get('meta_description', 'N/A')}
-Content Preview: {scraped_data.get('content', '')[:1500]}
+Content Preview: {scraped_data.get('content', '')[:2000]}{image_info}
 
-AVAILABLE TEMPLATES:
-{chr(10).join(template_options)}
+YOUR TASK:
+Generate 3 distinct creative directions for redesigning this website. Each direction should be detailed enough to guide a developer in creating a professional, modern website using Tailwind CSS.
 
-Based on the website's content, purpose, and industry, select the SINGLE most appropriate template.
+REQUIREMENTS FOR EACH VERSION:
 
-Respond with ONLY a JSON object in this exact format:
-{{"template_id": "template_name"}}
+Version 1 - "Faithful Optimization":
+- Stay very close to the original website's style, brand, and personality
+- Modernize the UI with better spacing, typography, and layout
+- Improve user experience while maintaining familiar feel
+- Optimize for responsiveness and accessibility
+- Keep the same general color scheme and visual tone
 
-Where template_name is one of: {', '.join(available_ids)}"""
+Version 2 - "Visual Reimagining":
+- Take creative freedom with visual style (colors, typography, design system)
+- Choose a distinctly different aesthetic (modern, elegant, bold, minimalist, etc.)
+- Maintain the core content and structure but with fresh visual treatment
+- All designs should still look professional and polished
+- Consider what visual style would best serve this business
 
+Version 3 - "Layout Revolution":
+- Take creative freedom with page layout and information architecture
+- Reimagine how content is organized and presented
+- Experiment with different section orders, grid systems, or layouts
+- Could be single-page scroll, multi-section, card-based, etc.
+- All layouts should be user-friendly and purposeful
+
+CRITICAL REQUIREMENTS:
+- All 3 versions must be professional, modern, and polished
+- All must use Tailwind CSS for styling
+- All must be fully responsive (mobile, tablet, desktop)
+- All must preserve the core business information and content
+- Each direction should be unique and distinguishable from the others
+
+OUTPUT FORMAT - CRITICAL:
+You MUST respond with ONLY a valid JSON object. No explanations, no markdown, no code blocks.
+Just pure JSON starting with {{ and ending with }}.
+
+Use this EXACT structure:
+{{
+  "version_1": "Your detailed instructions here...",
+  "version_2": "Your detailed instructions here...",
+  "version_3": "Your detailed instructions here..."
+}}
+
+IMPORTANT JSON RULES:
+- Use double quotes for all strings
+- Properly escape any quotes within the instruction text using backslash
+- Each instruction should be 3-5 paragraphs in a single string
+- No line breaks within JSON values - keep each instruction as one continuous string
+- Make sure all curly braces and quotes are properly closed
+
+Each instruction string should describe:
+- Overall design approach and philosophy
+- Key visual elements (colors, typography, spacing)
+- Layout structure and organization
+- Specific features or components to emphasize
+- How it differs from the other versions
+
+REMEMBER: Output ONLY the JSON object, nothing else."""
+
+        # Use Chat Completions API with JSON mode for structured output
+        # (Responses API doesn't support JSON mode - it's for open-ended text like HTML)
         response = client.chat.completions.create(
-            model="gpt-4o-mini",  # Use cheaper/faster model for selection
+            model="gpt-4-turbo",  # Use gpt-4-turbo for best JSON mode support
             messages=[
                 {
                     "role": "system",
-                    "content": "You are an expert at analyzing websites and categorizing them. You respond with only valid JSON containing the template_id that best matches the website."
+                    "content": "You are an expert web designer who creates detailed, actionable creative directions for website redesigns. You respond with only valid JSON containing three distinct design approaches."
                 },
                 {"role": "user", "content": prompt}
             ],
-            response_format={"type": "json_object"},
-            max_tokens=100,
-            temperature=0.3  # Lower temperature for more consistent selection
+            response_format={"type": "json_object"},  # This ensures valid JSON output
+            temperature=0.7,  # Some creativity
+            max_tokens=4000
         )
         
-        # Parse JSON response
+        # Get response text from Chat Completions API
         response_text = response.choices[0].message.content.strip()
-        response_data = json.loads(response_text)
-        selected_template = response_data.get("template_id", "").strip().lower()
         
-        # Validate selection
-        if selected_template not in available_ids:
-            print(f"⚠️ Invalid template selection '{selected_template}', defaulting to 'restaurant'")
-            selected_template = "restaurant"
+        # Log raw response for debugging
+        print(f"📥 Raw response length: {len(response_text)} chars")
+        print(f"📥 First 500 chars: {response_text[:500]}")
         
-        print(f"✅ Selected template: {selected_template}")
-        return selected_template
+        # Clean up potential markdown or extra text
+        # Remove markdown code blocks if present
+        if response_text.startswith('```json'):
+            response_text = response_text[7:]
+        elif response_text.startswith('```'):
+            response_text = response_text[3:]
+        if response_text.endswith('```'):
+            response_text = response_text[:-3]
+        response_text = response_text.strip()
+        
+        # Find JSON object boundaries
+        start_idx = response_text.find('{')
+        end_idx = response_text.rfind('}')
+        
+        if start_idx == -1 or end_idx == -1:
+            raise Exception("No JSON object found in response")
+        
+        # Extract just the JSON part
+        json_text = response_text[start_idx:end_idx + 1]
+        
+        # Parse JSON with better error handling
+        try:
+            instructions = json.loads(json_text)
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON parse error: {e}")
+            print(f"📄 Attempted to parse: {json_text[:1000]}...")
+            raise Exception(f"Failed to parse JSON from GPT response: {e}")
+        
+        # Validate that we got all 3 versions
+        if not all(key in instructions for key in ['version_1', 'version_2', 'version_3']):
+            missing_keys = [k for k in ['version_1', 'version_2', 'version_3'] if k not in instructions]
+            raise Exception(f"GPT response missing required keys: {missing_keys}. Got keys: {list(instructions.keys())}")
+        
+        # Validate that values are strings and not empty
+        for key in ['version_1', 'version_2', 'version_3']:
+            if not isinstance(instructions[key], str) or len(instructions[key].strip()) < 50:
+                raise Exception(f"{key} is invalid: too short or not a string")
+        
+        print(f"✅ Generated 3 creative directions successfully")
+        print(f"   Version 1 length: {len(instructions['version_1'])} chars")
+        print(f"   Version 2 length: {len(instructions['version_2'])} chars")
+        print(f"   Version 3 length: {len(instructions['version_3'])} chars")
+        
+        return instructions
         
     except Exception as e:
-        print(f"❌ Error selecting template: {e}")
-        return "restaurant"  # Safe default fallback
+        print(f"❌ CRITICAL ERROR generating version instructions: {e}")
+        print(f"❌ This should not happen - instruction generation failed completely")
+        # Re-raise the error instead of using fallback - let the job fail
+        raise
 
 
 async def process_images(scraped_data: Dict[str, Any], website_id: str) -> Dict[str, Any]:
@@ -503,26 +589,19 @@ async def process_images(scraped_data: Dict[str, Any], website_id: str) -> Dict[
         return scraped_data
 
 
-def generate_optimized_html(scraped_data: Dict[str, Any], template_id: str = "restaurant") -> str:
+def generate_optimized_html(scraped_data: Dict[str, Any], instructions: str) -> str:
     """
-    Generate optimized HTML using OpenAI GPT with selected template guidance.
+    Generate optimized HTML using OpenAI GPT with creative direction instructions.
     
     Args:
         scraped_data: Dictionary containing scraped website data
-        template_id: The template identifier to use for generation (default: "restaurant")
+        instructions: Creative direction and design instructions for this version
         
     Returns:
-        Generated HTML string following selected template specifications
+        Generated HTML string following the provided instructions
     """
-    from .website_generator_templates import get_template_content, template_exists
-    
     try:
-        print(f"🤖 Generating HTML with GPT using '{template_id}' template...")
-        
-        # Validate template exists
-        if not template_exists(template_id):
-            print(f"⚠️ Template '{template_id}' not found, falling back to 'restaurant'")
-            template_id = "restaurant"
+        print(f"🤖 Generating HTML with GPT-5.1...")
         
         # Setup OpenAI client
         api_key = os.getenv('OPENAI_API_KEY')
@@ -530,9 +609,6 @@ def generate_optimized_html(scraped_data: Dict[str, Any], template_id: str = "re
             raise Exception("OPENAI_API_KEY not found in environment variables")
         
         client = OpenAI(api_key=api_key)
-        
-        # Get template content for selected template
-        template_content = get_template_content(template_id)
         
         # Prepare image information for the prompt
         image_info = ""
@@ -550,39 +626,43 @@ def generate_optimized_html(scraped_data: Dict[str, Any], template_id: str = "re
 
 """
 
-        # Build comprehensive template-guided prompt
-        prompt = f"""{template_content}
+        # Build comprehensive prompt with creative instructions
+        prompt = f"""=== CREATIVE DIRECTION ===
 
-=== BUSINESS DATA TO CUSTOMIZE ===
+{instructions}
+
+=== BUSINESS DATA TO IMPLEMENT ===
 
 Business Name: {scraped_data['title']}
 Original Website: {scraped_data['url']}
 Meta Description: {scraped_data.get('meta_description', 'Professional business with quality service')}{image_info}
 
-Content to integrate with template:
+Content to integrate:
 {scraped_data['content'][:2500]}
 
-=== GENERATION INSTRUCTIONS ===
+=== TECHNICAL REQUIREMENTS ===
 
-You must create a complete, professional website that EXACTLY follows the template specification above while customizing all content for this specific business.
+You must create a complete, professional website following the creative direction above.
 
 CRITICAL REQUIREMENTS:
-1. Follow the template architecture precisely - every layout specification must be implemented
+1. Follow the creative direction precisely - implement the specified design philosophy and visual style
 2. Use the business's actual data to populate all content sections
-3. Implement the exact visual design system specified (typography, colors, spacing, components)
-4. Include all accessibility and SEO requirements as detailed
-5. Generate ONLY the complete HTML code - no explanations or markdown formatting
-6. Start with <!DOCTYPE html> and end with </html>
-7. Make all CSS and JavaScript inline within the HTML document
+3. Use Tailwind CSS (via CDN) for ALL styling - no custom CSS unless absolutely necessary
+4. Include proper semantic HTML5 structure (header, nav, main, section, footer)
+5. Implement responsive design for mobile, tablet, and desktop
+6. Generate ONLY the complete HTML code - no explanations or markdown formatting
+7. Start with <!DOCTYPE html> and end with </html>
+8. Make all JavaScript inline within the HTML document
 
 OUTPUT FORMAT REQUIREMENTS:
 - Output ONLY raw HTML code - absolutely NO markdown code blocks, NO explanations, NO ``` markers
 - Start immediately with <!DOCTYPE html> - no preamble, no commentary
 - End with </html> - nothing after it
 - Ensure the HTML is properly formatted and indented for readability
-- Include ALL functionality inline (CSS and JavaScript within the HTML)
+- Include Tailwind CSS CDN in the head: <script src="https://cdn.tailwindcss.com"></script>
+- Use Tailwind utility classes for all styling (colors, spacing, typography, layout, etc.)
 
-The result must be a beautiful, professional website that matches the template's quality while showcasing this business's unique content and branding. The website should look polished, modern, and ready for production use.
+The result must be a beautiful, professional website that perfectly executes the creative direction while showcasing this business's content. The website should look polished, modern, and ready for production use.
 """
 
         # Use GPT-5.1 with Responses API for high-quality code generation
@@ -639,6 +719,72 @@ The result must be a beautiful, professional website that matches the template's
     except Exception as e:
         print(f"❌ Error generating HTML with GPT: {e}")
         return generate_fallback_html(scraped_data)
+
+
+async def generate_three_versions_parallel(scraped_data: Dict[str, Any], instructions_dict: Dict[str, str]) -> Dict[str, Optional[str]]:
+    """
+    Generate 3 HTML versions in parallel using asyncio.
+    
+    Args:
+        scraped_data: Dictionary containing scraped website data
+        instructions_dict: Dictionary with version_1, version_2, version_3 instruction strings
+        
+    Returns:
+        Dictionary with version_1, version_2, version_3 HTML strings (or None if generation failed)
+    """
+    import asyncio
+    from concurrent.futures import ThreadPoolExecutor
+    
+    print("🚀 Starting parallel generation of 3 website versions...")
+    
+    # Define async wrapper for the synchronous generate_optimized_html function
+    async def generate_version(version_name: str, instructions: str):
+        """Generate a single version asynchronously."""
+        try:
+            print(f"   Starting {version_name}...")
+            
+            # Run the synchronous function in a thread pool
+            loop = asyncio.get_event_loop()
+            with ThreadPoolExecutor() as executor:
+                html = await loop.run_in_executor(
+                    executor,
+                    generate_optimized_html,
+                    scraped_data,
+                    instructions
+                )
+            
+            print(f"   ✅ {version_name} completed ({len(html)} chars)")
+            return html
+            
+        except Exception as e:
+            print(f"   ❌ {version_name} failed: {str(e)}")
+            return None
+    
+    # Create tasks for all 3 versions
+    tasks = [
+        generate_version("Version 1", instructions_dict.get('version_1', '')),
+        generate_version("Version 2", instructions_dict.get('version_2', '')),
+        generate_version("Version 3", instructions_dict.get('version_3', ''))
+    ]
+    
+    # Execute all 3 generations in parallel
+    results = await asyncio.gather(*tasks, return_exceptions=True)
+    
+    # Process results and handle exceptions
+    version_htmls = {
+        'version_1': results[0] if not isinstance(results[0], Exception) else None,
+        'version_2': results[1] if not isinstance(results[1], Exception) else None,
+        'version_3': results[2] if not isinstance(results[2], Exception) else None
+    }
+    
+    # Count successes
+    success_count = sum(1 for html in version_htmls.values() if html is not None)
+    print(f"🎉 Parallel generation complete: {success_count}/3 versions succeeded")
+    
+    if success_count == 0:
+        raise Exception("All 3 versions failed to generate")
+    
+    return version_htmls
 
 
 def generate_fallback_html(scraped_data: Dict[str, Any]) -> str:
