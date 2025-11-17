@@ -589,7 +589,7 @@ The result must be a beautiful, professional website that matches the template's
         print(f"🤖 Generating HTML with GPT-5.1 (high reasoning)...")
         
         # System prompt for expert frontend developer
-        system_prompt = "You are an expert frontend developer specializing in creating beautiful, modern, production-ready HTML documents using Tailwind CSS. You excel at implementing professional templates with Tailwind utility classes and inline JavaScript. You are a master of Tailwind's utility-first approach and use it for ALL styling (layout, colors, typography, spacing, responsive design, hover states, transitions). You ALWAYS output only raw HTML code - no markdown, no code blocks, no explanations. Your HTML is clean, semantic, accessible, visually stunning, and leverages Tailwind CSS via CDN for all styling needs."
+        system_prompt = "You are an expert frontend developer specializing in creating beautiful, modern, production-ready HTML documents using Bootstrap 5. You excel at implementing professional templates with Bootstrap 5 components (navbar, cards, carousels, modals, buttons, etc.) and utility classes. You are a master of Bootstrap's component-based approach and use Bootstrap components and utilities for ALL styling (layout, colors, typography, spacing, responsive design, hover states, transitions). You ALWAYS output only raw HTML code - no markdown, no code blocks, no explanations. Your HTML is clean, semantic, accessible, visually stunning, and leverages Bootstrap 5 CSS/JS via CDN and Bootstrap Icons for all styling and component needs."
         
         # Combine system prompt and user prompt into input
         full_input = f"{system_prompt}\n\n{prompt}"

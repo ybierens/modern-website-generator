@@ -17,14 +17,16 @@ TEMPLATES = {
         "description": "Professional template for restaurants, cafes, bars, food trucks, and catering services. Features menu displays, location/hours information, hero food imagery, reservation CTAs, and grid-based dish showcases. Optimized for food service businesses with emphasis on visual appeal and call-to-action buttons.",
         "content": """=== PROFESSIONAL RESTAURANT WEBSITE TEMPLATE ===
 
-You are building a modern, professional website for a restaurant using Tailwind CSS. Apply your reasoning to create the optimal design for THIS specific restaurant based on its unique content, style, and brand.
+You are building a modern, professional website for a restaurant using Bootstrap 5. Apply your reasoning to create the optimal design for THIS specific restaurant based on its unique content, style, and brand.
 
 TECHNICAL FOUNDATION:
 
 Required Setup:
-- Include Tailwind CSS Play CDN: <script src="https://cdn.tailwindcss.com"></script>
+- Include Bootstrap 5 CSS: <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+- Include Bootstrap 5 JS Bundle: <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+- Include Bootstrap Icons: <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
 - Single self-contained HTML file with inline JavaScript
-- Use Tailwind utility classes for ALL styling
+- Use Bootstrap 5 components and utility classes for ALL styling
 - Semantic HTML5 structure (header, nav, main, section, footer)
 
 DESIGN GOALS:
@@ -40,17 +42,19 @@ Create a website that:
 CORE SECTIONS TO INCLUDE:
 
 1. Sticky Navigation
+   - Use Bootstrap navbar component with fixed-top class
    - Always accessible while scrolling
    - Logo/name prominently displayed
    - Key navigation links (menu, hours, contact, reservations)
-   - Call-to-action buttons for ordering/booking
-   - Mobile-friendly hamburger menu
+   - Call-to-action buttons for ordering/booking using Bootstrap btn classes
+   - Mobile-friendly hamburger menu using Bootstrap navbar-toggler
 
 2. Hero Section
+   - Use Bootstrap carousel or jumbotron-style hero with container-fluid
    - Powerful first impression using best available image
    - Clear statement of what makes this restaurant special
-   - Prominent action buttons (reserve, order, view menu)
-   - Should occupy significant viewport height
+   - Prominent action buttons (reserve, order, view menu) using Bootstrap btn-lg classes
+   - Should occupy significant viewport height (use min-vh-100 or similar)
 
 3. About/Story (if content available)
    - Restaurant's unique selling points
@@ -58,11 +62,12 @@ CORE SECTIONS TO INCLUDE:
    - What makes them different
 
 4. Menu/Dishes Showcase
+   - Use Bootstrap card components in a grid (row/col classes)
    - Highlight signature dishes or popular items
-   - Use food imagery effectively
+   - Use food imagery effectively with Bootstrap img-fluid class
    - Show prices clearly if available
-   - Organized by category if applicable
-   - Make items look appetizing and desirable
+   - Organized by category if applicable using Bootstrap tabs or accordion
+   - Make items look appetizing and desirable with hover effects
 
 5. Experience Section
    - Ambiance, dining room, bar, private dining
@@ -162,7 +167,7 @@ Performance:
 - Lazy load images below the fold
 - Optimize for fast initial render
 - Minimal JavaScript complexity
-- Efficient Tailwind usage
+- Efficient Bootstrap 5 usage
 
 CONTENT REQUIREMENTS:
 
@@ -197,30 +202,34 @@ TECHNICAL REQUIREMENTS:
 
 HTML Structure:
 - Complete standalone document with <!DOCTYPE html>
-- Include Tailwind CSS Play CDN: <script src="https://cdn.tailwindcss.com"></script> in head
-- Inline JavaScript only (no external JS files beyond Tailwind CDN)
+- Include Bootstrap 5 CSS and JS CDN links in head and before </body>
+- Include Bootstrap Icons CDN in head
+- Inline JavaScript only (no external JS files beyond Bootstrap CDN)
 - Semantic HTML5 elements throughout (header, nav, main, section, article, footer)
-- Meaningful, descriptive class names using Tailwind utilities
+- Use Bootstrap component classes and utility classes throughout
 
-Styling with Tailwind:
-- Use Tailwind utility classes for ALL styling (layout, colors, typography, spacing, etc.)
-- Only write custom CSS in a <style> tag if absolutely necessary for unique effects Tailwind cannot achieve
-- Mobile-first responsive design using Tailwind breakpoints (md:, lg:, xl:)
-- Use Tailwind transitions and animations (transition-all, duration-300, hover:, etc.)
-- Leverage Tailwind's color palette (red-600, gray-900, etc.) for consistency
+Styling with Bootstrap 5:
+- Use Bootstrap 5 utility classes for ALL styling (layout, colors, typography, spacing, etc.)
+- Leverage Bootstrap components: navbar, cards, buttons, carousel, modals, accordions, tabs
+- Use Bootstrap's grid system (container, row, col) for responsive layouts
+- Only write custom CSS in a <style> tag if absolutely necessary for unique effects Bootstrap cannot achieve
+- Mobile-first responsive design using Bootstrap breakpoints (sm, md, lg, xl, xxl)
+- Use Bootstrap's built-in transitions and hover effects
+- Leverage Bootstrap's color system (primary, secondary, success, danger, warning, info, light, dark) and customize with CSS variables if needed
 
 JavaScript Requirements:
-- Mobile hamburger menu toggle functionality
-- Smooth scroll behavior for anchor links
+- Bootstrap 5 handles mobile hamburger menu toggle automatically
+- Smooth scroll behavior for anchor links (Bootstrap scrollspy or custom)
 - Image lazy loading with loading="lazy" attribute
-- Vanilla JavaScript only (no external dependencies)
+- Use Bootstrap's JavaScript components (modals, carousels, dropdowns, etc.)
+- Minimal custom JavaScript - leverage Bootstrap's built-in functionality
 - Keep JavaScript minimal and clean
 
 Performance Optimization:
 - Use loading="lazy" for images below the fold
-- Minimize custom CSS - rely on Tailwind utilities
+- Minimize custom CSS - rely on Bootstrap utilities and components
 - Optimize for Core Web Vitals
-- Keep JavaScript lightweight and efficient
+- Keep JavaScript lightweight and efficient - use Bootstrap's optimized bundle
 
 SEO & Meta Tags:
 - Title tag: restaurant name + location + relevant keywords
@@ -231,12 +240,13 @@ SEO & Meta Tags:
 
 Quality Standards:
 - Clean, well-indented HTML with appropriate comments
-- Consistent use of Tailwind's spacing scale (p-4, p-6, gap-4, etc.)
-- Hover effects on all interactive elements (buttons, links, cards)
-- Clear visual hierarchy using Tailwind typography and spacing
-- Generous whitespace using Tailwind spacing utilities
-- Modern aesthetics with rounded corners (rounded-lg, rounded-xl, rounded-2xl)
-- Smooth transitions on all interactive elements (transition-all, duration-300)
+- Consistent use of Bootstrap's spacing utilities (p-3, p-4, p-5, mb-4, mt-5, etc.)
+- Hover effects on all interactive elements using Bootstrap's built-in hover states
+- Clear visual hierarchy using Bootstrap typography classes (display-1, h1, lead, etc.)
+- Generous whitespace using Bootstrap spacing utilities
+- Modern aesthetics with Bootstrap's rounded utilities (rounded, rounded-lg, rounded-circle)
+- Smooth transitions on all interactive elements using Bootstrap's built-in transitions
+- Use Bootstrap's shadow utilities (shadow, shadow-sm, shadow-lg) for depth
 
 OUTPUT: Complete, functional, professional website ready for immediate use. The generated HTML must be a single, self-contained file that works perfectly when opened directly in a browser or loaded in an iframe.
 
