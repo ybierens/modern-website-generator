@@ -25,7 +25,7 @@ alwaysApply: true
 
 1. **Self-check compliance** by asking:
    - "Is what I just built aligned with this project's defined architecture?"
-   - "Does this follow the template-guided AI approach?"
+   - "Does this follow the three-version parallel generation approach?"
    - "Is this consistent with the Docker-first methodology?"
    - "Does this maintain the established patterns and constraints?"
 
@@ -35,14 +35,14 @@ alwaysApply: true
    - **Explain potential issues** that could arise from the deviation
 
 ### Established Project Patterns:
-- **Multi-Template AI Generation** - AI-powered template selection with professional template library
-- **Two-Stage AI Process** - Router LLM selects template, generator LLM creates website
+- **Three-Version AI Generation** - AI generates 3 creative variations of each website in parallel
+- **Two-Stage AI Process** - GPT-4-turbo generates creative directions, GPT-5.1 generates HTML for each version
 - **Docker-First Architecture** - All services containerized, no local dependencies
 - **FastAPI Backend** - Python-based API with async processing and database persistence
 - **Single-Command Deployment** - Maintain zero-configuration setup approach
-- **Professional Consistency** - Template-specific design patterns with automatic selection
+- **Professional Variety** - Three distinct design approaches: Color Palette, Design System, and Layout variations
 
-**🎯 Goal:** Preserve the integrity of this capstone project's carefully designed architecture and prevent deviations that could undermine the established professional template-guided approach.
+**🎯 Goal:** Preserve the integrity of this capstone project's carefully designed architecture and prevent deviations that could undermine the established three-version parallel generation approach.
 
 ## 🚀 Single-Command Docker Setup
 
@@ -147,15 +147,15 @@ docker-compose up --build -d
 
 ## 🌐 Website Generator Application
 
-Full-stack application that scrapes websites and generates modern, optimized versions using intelligent multi-template AI system.
+Full-stack application that scrapes websites and generates three creative variations using AI-powered parallel generation.
 
 ### Architecture:
-- **Frontend**: Clean web interface for URL input and result viewing
-- **Backend**: FastAPI service handling scraping, AI template selection, generation, and storage
-- **Database**: PostgreSQL instance for persistence, job tracking, and template metadata
-- **AI Processing**: Two-stage OpenAI GPT integration
-  - **Stage 1 - Router**: GPT-4o-mini analyzes scraped content and selects optimal template
-  - **Stage 2 - Generator**: GPT-4o generates professional HTML/CSS/JS using selected template
+- **Frontend**: Clean web interface for URL input, version switching, and result viewing
+- **Backend**: FastAPI service handling scraping, AI generation coordination, and storage
+- **Database**: PostgreSQL instance for persistence, job tracking, and multi-version storage
+- **AI Processing**: Two-stage OpenAI GPT integration with parallel execution
+  - **Stage 1 - Creative Directions**: GPT-4-turbo generates 3 distinct design approaches (Color Palette, Design System, Layout)
+  - **Stage 2 - Parallel Generation**: GPT-5.1 generates 3 complete HTML websites simultaneously following each direction
 
 ### Usage:
 ```bash
@@ -170,44 +170,60 @@ curl -s http://localhost:8000/health
 ```
 
 ### Core Features:
-1. **Web Interface**: Responsive UI with URL input and real-time status
-2. **Async Processing**: Background job queue with progress tracking
-3. **AI-Powered Template Selection**: Intelligent router analyzes scraped content to select optimal template
-4. **Multi-Template Library**: Expandable collection of professional templates for different website types
-5. **Template-Guided Generation**: GPT-powered website creation following selected template specifications
-6. **Persistent Storage**: Database persistence with template tracking for sharing and archival
+1. **Web Interface**: Responsive UI with URL input, version switching controls, and preview gallery
+2. **Async Processing**: Background job queue with progress tracking and parallel generation
+3. **Three-Version Generation**: Creates 3 distinct design variations (Color, Design System, Layout) for each website
+4. **Parallel Execution**: All 3 versions generated simultaneously using async processing
+5. **AI Creative Directions**: GPT-4-turbo analyzes content and generates unique design philosophies for each version
+6. **Persistent Storage**: Database persistence with multi-version tracking for each website
 7. **Smart Identifiers**: Intelligent URL-to-identifier extraction
-8. **Secure Viewing**: Sandboxed iframe display of generated websites
+8. **Secure Viewing**: Sandboxed iframe display with version switching capabilities
 
-### Multi-Template System with AI Router:
-Two-stage AI process for intelligent template selection and website generation:
+### Three-Version Generation System:
+Two-stage AI process with parallel execution for creating design variations:
 
-**Stage 1 - Template Router (GPT-4o-mini):**
-Analyzes scraped content, selects appropriate template from library, returns JSON with template_id
+**Stage 1 - Creative Direction Generator (GPT-4-turbo):**
+- Analyzes scraped website content (title, description, text, images)
+- Generates 3 distinct creative directions as JSON: `version_1`, `version_2`, `version_3`
+- Each direction specifies a unique design philosophy:
+  - **Version 1 - Color Palette Innovation**: Bold color scheme transformations
+  - **Version 2 - Design System Shift**: Typography, spacing, and visual hierarchy variations
+  - **Version 3 - Layout Revolution**: Alternative page structures and information architecture
+- Returns detailed instructions (3-5 paragraphs each) for implementing each creative direction
 
-**Stage 2 - Website Generator (GPT-4o):**
-Loads selected template specification, generates professional HTML/CSS/JS following template architecture
+**Stage 2 - Parallel HTML Generation (GPT-5.1):**
+- Receives creative instructions for each version plus scraped content
+- Generates 3 complete websites in parallel using asyncio
+- Uses GPT-5.1 Responses API with high reasoning effort
+- Outputs production-ready HTML with Tailwind CSS styling
+- All 3 generations execute simultaneously for efficiency
 
-**Template Library:**
-- Stored in `backend/website_generator_templates.py` as dict-of-dicts
-- Each template: name, description (for router), content (for generator)
-- Current: Restaurant & Food Service (expandable to portfolio, e-commerce, blog, etc.)
-- Database tracks which template was used for each website
+**Version Storage:**
+- Each website has 3 versions stored in `website_versions` table
+- Tracks: version_number (1-3), generation_instructions, generated_html
+- Users can switch between versions in real-time via the UI
+- At least 1 successful version required for job completion
 
 ### API Endpoints:
-- `GET /` - Web interface
-- `POST /generate` - Start website generation
-- `GET /status/{job_id}` - Check processing status  
-- `GET /website/{identifier}` - View generated website
+- `GET /` - Main web interface with generator form and recent websites gallery
+- `POST /generate` - Start async website generation (returns job_id)
+- `GET /status/{job_id}` - Poll job status and get results
+- `GET /websites` - Get 10 most recent generated websites with version metadata
+- `GET /website/{identifier}` - View website with version switcher UI
+- `GET /raw/{identifier}/{version_number}` - Serve raw HTML for iframe embedding (versions 1-3)
 - `GET /health` - Service health check
 
 ### Generation Pipeline:
-1. **Scraping**: Extract content, metadata, and images from original website
-2. **Image Processing**: Convert images to Cloudinary URLs for reliable hosting
-3. **Template Selection**: AI router analyzes content and selects appropriate template
-4. **Template Storage**: Selected template_id saved to database
-5. **HTML Generation**: AI generator creates website using selected template specifications
-6. **Storage & Display**: Generated HTML saved and made available for viewing
+1. **Job Creation**: Create job record with `pending` status, return job_id to frontend
+2. **Identifier Extraction**: Generate unique identifier from URL (with collision handling)
+3. **Website Scraping**: Extract title, content, metadata, and images using BeautifulSoup
+4. **Database Record**: Create website record with original HTML and scraped data
+5. **Image Processing**: Convert all images to Cloudinary URLs and store mappings in database
+6. **Creative Directions**: GPT-4-turbo generates 3 distinct design instructions (JSON output)
+7. **Parallel Generation**: Launch 3 async tasks to generate HTML using GPT-5.1 (high reasoning)
+8. **Version Storage**: Save each successful version to `website_versions` table
+9. **Job Completion**: Mark job as `completed` if at least 1 version succeeded, otherwise `failed`
+10. **Frontend Display**: User can view and switch between all generated versions
 
 ### Development:
 ```bash
@@ -221,8 +237,9 @@ docker-compose exec postgres psql -U postgres -d website_generator
 docker-compose run --rm --no-deps backend pip install <package>
 docker-compose up --build -d
 
-# Add new template:
-# 1. Edit backend/website_generator_templates.py
-# 2. Add new entry to TEMPLATES dict with name, description, and content
-# 3. Restart containers: docker-compose up --build -d
+# Database tables:
+# - websites: stores identifier, original_url, original_html, timestamps
+# - website_versions: stores version_number (1-3), generation_instructions, generated_html per website
+# - jobs: tracks async job status (pending, processing, completed, failed)
+# - image_mappings: tracks original URLs to Cloudinary URL conversions
 ```
